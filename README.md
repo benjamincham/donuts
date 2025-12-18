@@ -7,35 +7,68 @@ AWS Bedrock AgentCore を使用したフルスタック AI エージェントシ
 ### システム構成図
 
 ```mermaid
-graph TB
-    Client[クライアント<br/>Cognito JWT] --> Runtime[AgentCore Runtime<br/>JWT Header Transfer]
-    Runtime --> Express[Express Server<br/>Request Context Management]
-    Express --> Agent[Strands Agent<br/>遅延初期化]
-    Agent --> MCP[MCP Client<br/>JWT Propagation]
-    MCP --> Gateway[AgentCore Gateway<br/>API + Auth]
-    Gateway --> Tools[Lambda Tools<br/>echo, ping, etc.]
+flowchart TB
+    subgraph Client["📱 Client (CLI)"]
+        CLI[CLI Commands]
+    end
 
-    style Runtime fill:#e1f5fe
-    style Express fill:#f3e5f5
-    style Agent fill:#e8f5e8
-    style MCP fill:#fff3e0
-    style Gateway fill:#fce4ec
+    subgraph Auth["🔐 Cognito"]
+        UserPool[User Pool]
+    end
+
+    subgraph Runtime["☁️ AgentCore Runtime"]
+        Express[Express Server]
+        Agent[Strands Agent<br/>+ Local Tools]
+        MCP[MCP Client]
+    end
+
+    subgraph Gateway["🌐 AgentCore Gateway"]
+        GatewayMCP[MCP Endpoint]
+    end
+
+    subgraph Lambda["⚡ Lambda Tools"]
+        EchoPing[Echo / Ping]
+    end
+
+    CLI -->|1. JWT取得| UserPool
+    UserPool -->|2. Token| CLI
+    CLI -->|3. invoke + JWT| Express
+    Express --> Agent
+    Agent --> MCP
+    MCP -->|4. tools/call + JWT| GatewayMCP
+    GatewayMCP --> EchoPing
+
+    style Runtime fill:#e3f2fd
+    style Gateway fill:#f3e5f5
 ```
 
 ### JWT 認証フロー
 
-```
-┌─────────────┐    JWT    ┌──────────────────┐    JWT    ┌─────────────┐
-│   Client    │ ────────▶ │ AgentCore Runtime │ ────────▶ │   Express   │
-│  (Cognito)  │           │ (Header Forward) │           │   Server    │
-└─────────────┘           └──────────────────┘           └─────────────┘
-                                                                 │
-                                                                 │ JWT Context
-                                                                 ▼
-┌─────────────┐           ┌──────────────────┐           ┌─────────────┐
-│   Gateway   │ ◀──────── │   MCP Client     │ ◀──────── │ Agent Tools │
-│ (API + Auth)│    JWT    │ (JWT Propagation)│   Context │ (Strands)   │
-└─────────────┘           └──────────────────┘           └─────────────┘
+```mermaid
+sequenceDiagram
+    participant C as Client (CLI)
+    participant Cognito as Cognito User Pool
+    participant R as AgentCore Runtime
+    participant A as Strands Agent
+    participant G as AgentCore Gateway
+    participant L as Lambda Tools
+
+    C->>Cognito: 1. 認証リクエスト
+    Cognito-->>C: 2. JWT Access Token
+
+    C->>R: 3. POST /invocations (Bearer Token)
+    R->>A: 4. リクエスト + JWT Context
+
+    A->>A: 5. ローカルツール実行 (Weather)
+
+    A->>G: 6. MCP tools/call (JWT転送)
+    G->>G: 7. JWT検証
+    G->>L: 8. Lambda Invoke
+    L-->>G: 9. ツール結果
+    G-->>A: 10. MCP Response
+
+    A-->>R: 11. Agent Response
+    R-->>C: 12. HTTP Response
 ```
 
 ## 🔑 JWT 認証ヘッダー転送機能

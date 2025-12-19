@@ -1,13 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ZodError } from 'zod';
 import { Send, Loader2 } from 'lucide-react';
 import { useChatStore } from '../stores/chatStore';
-import { chatPromptSchema } from '../schemas/chat';
 
 export const MessageInput: React.FC = () => {
   const { sendPrompt, isLoading, clearError } = useChatStore();
   const [input, setInput] = useState('');
-  const [validationError, setValidationError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // テキストエリアの自動リサイズ
@@ -20,19 +17,7 @@ export const MessageInput: React.FC = () => {
   }, [input]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    setInput(value);
-
-    // バリデーション
-    try {
-      chatPromptSchema.parse({ prompt: value });
-      setValidationError(null);
-    } catch (err) {
-      if (err instanceof ZodError && err.issues?.[0]?.message) {
-        setValidationError(err.issues[0].message);
-      }
-    }
-
+    setInput(e.target.value);
     // チャットストアのエラーをクリア
     clearError();
   };
@@ -45,19 +30,13 @@ export const MessageInput: React.FC = () => {
     }
 
     try {
-      // バリデーション
-      const validated = chatPromptSchema.parse({ prompt: input.trim() });
-
       // メッセージ送信
-      await sendPrompt(validated.prompt);
+      await sendPrompt(input.trim());
 
       // 入力フィールドをクリア
       setInput('');
-      setValidationError(null);
     } catch (err) {
-      if (err instanceof ZodError && err.issues?.[0]?.message) {
-        setValidationError(err.issues[0].message);
-      }
+      console.error('メッセージ送信エラー:', err);
     }
   };
 
@@ -70,59 +49,42 @@ export const MessageInput: React.FC = () => {
   };
 
   return (
-    <div className="border-t border-gray-200 bg-white p-4">
+    <div className="bg-white p-4">
       <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
-        <div className="flex items-stretch space-x-4">
+        <div className="relative">
           {/* テキスト入力エリア */}
-          <div className="flex-1">
-            <div className="relative">
-              <textarea
-                ref={textareaRef}
-                value={input}
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
-                placeholder="メッセージを入力してください... (Shift+Enter で改行、Enter で送信)"
-                className={`input-field min-h-[44px] max-h-[200px] resize-none ${
-                  validationError ? 'border-red-300 focus:ring-red-300' : ''
-                }`}
-                disabled={isLoading}
-                rows={1}
-                style={{ height: 'auto' }}
-              />
-
-              {/* 文字数カウンター */}
-              <div className="absolute right-3 bottom-3 text-xs text-gray-400">
-                {input.length}/10000
-              </div>
-            </div>
-
-            {/* バリデーションエラー表示 */}
-            {validationError && <p className="mt-2 text-sm text-red-600">{validationError}</p>}
-
-            {/* ヘルプテキスト */}
-            <p className="mt-2 text-xs text-gray-500">Shift + Enter で改行、Enter で送信</p>
-          </div>
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            placeholder="メッセージを入力してください..."
+            className="w-full px-4 py-3 pr-12 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-300 focus:border-transparent resize-none min-h-[52px] max-h-[200px] bg-white"
+            disabled={isLoading}
+            rows={1}
+            style={{ height: 'auto' }}
+          />
 
           {/* 送信ボタン */}
           <button
             type="submit"
-            disabled={!input.trim() || isLoading || !!validationError}
-            className="button-primary inline-flex items-center gap-2 min-w-[100px] disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ height: '44px' }}
+            disabled={!input.trim() || isLoading}
+            className={`absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${
+              !input.trim() || isLoading
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                : 'bg-gray-900 text-white hover:bg-gray-800'
+            }`}
           >
             {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                送信中...
-              </>
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <>
-                <Send className="w-4 h-4 shrink-0" />
-                送信
-              </>
+              <Send className="w-4 h-4" />
             )}
           </button>
         </div>
+
+        {/* ヘルプテキスト */}
+        <p className="mt-2 text-xs text-gray-500">Shift + Enter で改行、Enter で送信</p>
       </form>
     </div>
   );

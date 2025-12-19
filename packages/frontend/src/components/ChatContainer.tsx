@@ -1,5 +1,5 @@
-import React from 'react';
-import { MessageSquare, Trash2, LogOut } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Trash2, LogOut, User } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useChatStore } from '../stores/chatStore';
 import { MessageList } from './MessageList';
@@ -8,6 +8,8 @@ import { MessageInput } from './MessageInput';
 export const ChatContainer: React.FC = () => {
   const { user, logout } = useAuthStore();
   const { clearMessages, messages, sessionId } = useChatStore();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = async () => {
     try {
@@ -21,22 +23,35 @@ export const ChatContainer: React.FC = () => {
     clearMessages();
   };
 
+  // ドロップダウン外クリックで閉じる
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
   return (
     <div className="chat-container">
       {/* ヘッダー */}
-      <header className="flex items-center justify-between p-4 bg-white border-b border-gray-200">
+      <header className="flex items-center justify-between p-4 bg-white">
         <div className="flex items-center">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gray-900 rounded-xl flex items-center justify-center">
-              <MessageSquare className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold text-gray-900">AgentCore Chat</h1>
-              <p className="text-sm text-gray-500">
-                {sessionId ? `セッション: ${sessionId.slice(0, 8)}...` : 'セッション未開始'}
-                {messages.length > 0 && ` • ${messages.length} メッセージ`}
-              </p>
-            </div>
+          <div>
+            <h1 className="text-lg font-semibold text-gray-900">AgentCore Chat</h1>
+            <p className="text-sm text-gray-500">
+              {sessionId ? `セッション: ${sessionId.slice(0, 8)}...` : 'セッション未開始'}
+              {messages.length > 0 && ` • ${messages.length} メッセージ`}
+            </p>
           </div>
         </div>
 
@@ -53,21 +68,35 @@ export const ChatContainer: React.FC = () => {
             </button>
           )}
 
-          {/* ユーザー情報とログアウト */}
-          <div className="flex items-center space-x-3">
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">{user?.username}</p>
-              <p className="text-xs text-gray-500">認証済み</p>
-            </div>
-
+          {/* ユーザードロップダウン */}
+          <div className="relative" ref={dropdownRef}>
             <button
-              onClick={handleLogout}
-              className="button-secondary text-sm inline-flex items-center gap-2"
-              title="ログアウト"
+              onClick={toggleDropdown}
+              className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors duration-200"
+              title="ユーザーメニュー"
             >
-              <LogOut className="w-4 h-4 shrink-0" />
-              ログアウト
+              <User className="w-4 h-4 text-gray-600" />
             </button>
+
+            {/* ドロップダウンメニュー */}
+            {isDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-lg border border-gray-200 py-2 z-10">
+                {/* ユーザー情報 */}
+                <div className="px-4 py-2 border-b border-gray-100">
+                  <p className="text-sm font-medium text-gray-900">{user?.username}</p>
+                  <p className="text-xs text-gray-500">認証済み</p>
+                </div>
+
+                {/* ログアウト */}
+                <button
+                  onClick={handleLogout}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  ログアウト
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>

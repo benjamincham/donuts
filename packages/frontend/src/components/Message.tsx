@@ -1,5 +1,4 @@
 import React from 'react';
-import { User, Bot } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -66,19 +65,10 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
   };
 
   return (
-    <div className="flex mb-6 justify-start">
-      <div className="flex flex-row items-start w-full">
-        {/* アバター */}
-        <div className="flex-shrink-0 mr-3">
-          <div
-            className={`w-10 h-10 rounded-2xl flex items-center justify-center ${
-              isUser ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700'
-            }`}
-          >
-            {isUser ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
-          </div>
-        </div>
-
+    <div className={`flex mb-6 ${isUser ? 'justify-end' : 'justify-start'}`}>
+      <div
+        className={`flex flex-row items-start w-full ${isUser ? 'max-w-3xl ml-auto' : 'max-w-4xl'}`}
+      >
         {/* メッセージバブル */}
         <div
           className={`relative ${
@@ -102,7 +92,7 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
 
           {/* ストリーミングインジケーター */}
           {message.isStreaming && (
-            <div className="flex items-center mt-2 text-gray-500">
+            <div className="flex items-center text-gray-500">
               <div className="flex space-x-1">
                 <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
                 <div
@@ -117,14 +107,6 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
               <span className="ml-2 text-xs">生成中...</span>
             </div>
           )}
-
-          {/* タイムスタンプ */}
-          <div className={`mt-2 text-xs text-gray-500 ${isUser ? 'text-right' : 'text-left'}`}>
-            {new Date(message.timestamp).toLocaleTimeString('ja-JP', {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </div>
         </div>
       </div>
     </div>

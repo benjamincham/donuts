@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ZodError } from 'zod';
+import { Send, Loader2 } from 'lucide-react';
 import { useChatStore } from '../stores/chatStore';
 import { chatPromptSchema } from '../schemas/chat';
 
@@ -61,8 +62,8 @@ export const MessageInput: React.FC = () => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Shift + Enter で改行、Enter で送信
-    if (e.key === 'Enter' && !e.shiftKey) {
+    // Shift + Enter で改行、Enter で送信（IME変換中は除く）
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       handleSubmit(e);
     }
@@ -71,7 +72,7 @@ export const MessageInput: React.FC = () => {
   return (
     <div className="border-t border-gray-200 bg-white p-4">
       <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
-        <div className="flex items-end space-x-4">
+        <div className="flex items-stretch space-x-4">
           {/* テキスト入力エリア */}
           <div className="flex-1">
             <div className="relative">
@@ -86,6 +87,7 @@ export const MessageInput: React.FC = () => {
                 }`}
                 disabled={isLoading}
                 rows={1}
+                style={{ height: 'auto' }}
               />
 
               {/* 文字数カウンター */}
@@ -105,36 +107,17 @@ export const MessageInput: React.FC = () => {
           <button
             type="submit"
             disabled={!input.trim() || isLoading || !!validationError}
-            className="button-primary flex items-center justify-center min-w-[100px] h-11 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="button-primary inline-flex items-center gap-2 min-w-[100px] disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ height: '44px' }}
           >
             {isLoading ? (
               <>
-                <svg
-                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
                 送信中...
               </>
             ) : (
               <>
-                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                </svg>
+                <Send className="w-4 h-4 shrink-0" />
                 送信
               </>
             )}

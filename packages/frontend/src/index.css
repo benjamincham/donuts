@@ -14,11 +14,11 @@
 
 @layer components {
   .chat-container {
-    @apply max-w-4xl mx-auto h-screen flex flex-col;
+    @apply w-full h-screen flex flex-col bg-white;
   }
 
   .message-bubble {
-    @apply max-w-sm p-3 rounded-2xl shadow-sm;
+    @apply max-w-full p-4 rounded-2xl shadow-sm;
   }
 
   .message-user {
@@ -39,5 +39,73 @@
 
   .button-secondary {
     @apply px-6 py-2 bg-gray-100 text-gray-900 rounded-2xl hover:bg-gray-200 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300;
+  }
+
+  /* Markdownスタイル調整 */
+  .markdown-content {
+    @apply text-gray-900;
+  }
+
+  .markdown-content h1,
+  .markdown-content h2,
+  .markdown-content h3,
+  .markdown-content h4,
+  .markdown-content h5,
+  .markdown-content h6 {
+    @apply font-semibold text-gray-900 mt-4 mb-2;
+  }
+
+  .markdown-content h1 {
+    @apply text-xl;
+  }
+
+  .markdown-content h2 {
+    @apply text-lg;
+  }
+
+  .markdown-content h3 {
+    @apply text-base;
+  }
+
+  .markdown-content p {
+    @apply mb-3 leading-relaxed;
+  }
+
+  .markdown-content ul,
+  .markdown-content ol {
+    @apply mb-3 pl-6;
+  }
+
+  .markdown-content li {
+    @apply mb-1;
+  }
+
+  .markdown-content ul li {
+    @apply list-disc;
+  }
+
+  .markdown-content ol li {
+    @apply list-decimal;
+  }
+
+  .markdown-content strong {
+    @apply font-semibold;
+  }
+
+  .markdown-content em {
+    @apply italic;
+  }
+
+  .markdown-content a {
+    @apply text-blue-600 hover:text-blue-800 underline;
+  }
+
+  .markdown-content hr {
+    @apply border-gray-300 my-4;
+  }
+
+  /* コードブロックのスタイル調整 */
+  .markdown-content pre {
+    @apply my-4 rounded-lg overflow-x-auto;
   }
 }

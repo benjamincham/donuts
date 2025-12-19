@@ -1,4 +1,9 @@
 import React from 'react';
+import { User, Bot } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import type { Message as MessageType } from '../types/index';
 
 interface MessageProps {
@@ -8,30 +13,69 @@ interface MessageProps {
 export const Message: React.FC<MessageProps> = ({ message }) => {
   const isUser = message.type === 'user';
 
+  // Markdownカスタムコンポーネント
+  const markdownComponents = {
+    code: ({ inline, className, children, ...props }: any) => {
+      const match = /language-(\w+)/.exec(className || '');
+      return !inline && match ? (
+        <SyntaxHighlighter
+          style={oneLight}
+          language={match[1]}
+          PreTag="div"
+          className="rounded-lg"
+          {...props}
+        >
+          {String(children).replace(/\n$/, '')}
+        </SyntaxHighlighter>
+      ) : (
+        <code className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-sm" {...props}>
+          {children}
+        </code>
+      );
+    },
+    // テーブルのスタイル調整
+    table: ({ children, ...props }: any) => (
+      <div className="overflow-x-auto my-4">
+        <table className="min-w-full border-collapse border border-gray-300" {...props}>
+          {children}
+        </table>
+      </div>
+    ),
+    th: ({ children, ...props }: any) => (
+      <th
+        className="border border-gray-300 px-4 py-2 bg-gray-50 font-semibold text-left"
+        {...props}
+      >
+        {children}
+      </th>
+    ),
+    td: ({ children, ...props }: any) => (
+      <td className="border border-gray-300 px-4 py-2" {...props}>
+        {children}
+      </td>
+    ),
+    // 引用のスタイル
+    blockquote: ({ children, ...props }: any) => (
+      <blockquote
+        className="border-l-4 border-gray-300 pl-4 py-2 my-4 bg-gray-50 italic"
+        {...props}
+      >
+        {children}
+      </blockquote>
+    ),
+  };
+
   return (
-    <div className={`flex mb-6 ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div className={`flex ${isUser ? 'flex-row-reverse' : 'flex-row'} items-start max-w-4xl`}>
+    <div className="flex mb-6 justify-start">
+      <div className="flex flex-row items-start w-full">
         {/* アバター */}
-        <div className={`flex-shrink-0 ${isUser ? 'ml-3' : 'mr-3'}`}>
+        <div className="flex-shrink-0 mr-3">
           <div
             className={`w-10 h-10 rounded-2xl flex items-center justify-center ${
               isUser ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700'
             }`}
           >
-            {isUser ? (
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
-                <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
-              </svg>
-            )}
+            {isUser ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
           </div>
         </div>
 
@@ -44,7 +88,11 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
           {/* メッセージ内容 */}
           <div className="prose prose-sm max-w-none">
             {message.content ? (
-              <div className="whitespace-pre-wrap break-words">{message.content}</div>
+              <div className="markdown-content">
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                  {message.content}
+                </ReactMarkdown>
+              </div>
             ) : (
               <div className="text-gray-500 italic">
                 {message.isStreaming ? 'メッセージを生成中...' : 'メッセージがありません'}

@@ -27,6 +27,7 @@ interface ListToolsResult {
     description?: string;
     inputSchema: unknown;
   }>;
+  nextCursor?: string;
 }
 
 /**
@@ -104,7 +105,7 @@ export class AgentCoreMCPClient {
   }
 
   /**
-   * 利用可能なツール一覧を取得
+   * 利用可能なツール一覧を取得（ページネーション対応）
    */
   async listTools(): Promise<
     Array<{
@@ -126,36 +127,60 @@ export class AgentCoreMCPClient {
         headers.Authorization = authHeader;
       }
 
-      const response = await fetch(this.endpointUrl, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'tools/list',
-          params: {},
-        }),
-      });
+      const allTools: Array<{
+        name: string;
+        description?: string;
+        inputSchema: unknown;
+      }> = [];
+      let cursor: string | undefined = undefined;
+      let pageCount = 0;
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+      // nextCursor がある限り全てのページを取得
+      do {
+        pageCount++;
+        logger.debug(`ページ${pageCount}を取得中...`, cursor ? { cursor } : {});
 
-      const data = (await response.json()) as JSONRPCResponse<ListToolsResult>;
+        const params = cursor ? { cursor } : {};
 
-      if (config.DEBUG_MCP) {
-        logger.debug('取得したツール一覧:', data);
-      }
+        const response = await fetch(this.endpointUrl, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: pageCount,
+            method: 'tools/list',
+            params,
+          }),
+        });
 
-      if (data.error) {
-        throw new Error(`MCP Error: ${data.error.message}`);
-      }
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
 
-      if (!data.result) {
-        throw new Error('ツール一覧の結果が空です');
-      }
+        const data = (await response.json()) as JSONRPCResponse<ListToolsResult>;
 
-      return data.result.tools;
+        if (config.DEBUG_MCP) {
+          logger.debug(`ページ${pageCount}の取得結果:`, data);
+        }
+
+        if (data.error) {
+          throw new Error(`MCP Error: ${data.error.message}`);
+        }
+
+        if (!data.result) {
+          throw new Error('ツール一覧の結果が空です');
+        }
+
+        // このページのツールを追加
+        allTools.push(...data.result.tools);
+        logger.debug(`ページ${pageCount}: ${data.result.tools.length}個のツールを取得`);
+
+        // 次のページがあるかチェック
+        cursor = data.result.nextCursor;
+      } while (cursor);
+
+      logger.info(`✅ 全${pageCount}ページから合計${allTools.length}個のツールを取得しました`);
+      return allTools;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '不明なエラー';
       logger.error('ツール一覧の取得に失敗:', errorMessage);

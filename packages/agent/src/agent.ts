@@ -3,11 +3,11 @@
  * AgentCore Runtime で動作し、AgentCore Gateway のツールを使用する AI Agent
  */
 
-import { Agent, BedrockModel, tool } from '@strands-agents/sdk';
+import { Agent, BedrockModel, tool, Message } from '@strands-agents/sdk';
 import { z } from 'zod';
-import { config, logger } from './config/index.js';
-import { mcpClient, MCPToolResult } from './mcp/client.js';
-import { weatherTool } from './tools/weather.js';
+import { config, logger } from './config/index';
+import { mcpClient, MCPToolResult } from './mcp/client';
+import { weatherTool } from './tools/weather';
 
 /**
  * JSON Schema プロパティの型定義
@@ -169,8 +169,13 @@ function createStrandsToolFromMCP(mcpTool: MCPToolDefinition) {
 
 /**
  * AgentCore Runtime 用の Strands Agent を作成
+ * @param initialMessages 初期会話履歴（セッション復元用）
+ * @param hooks HookProvider の配列（セッション永続化など）
  */
-export async function createAgent(): Promise<Agent> {
+export async function createAgent(
+  initialMessages?: Message[],
+  hooks?: import('@strands-agents/sdk').HookProvider[]
+): Promise<Agent> {
   logger.info('Strands Agent を初期化中...');
 
   try {
@@ -214,7 +219,16 @@ ${localTools.concat(gatewayTools).join('\n')}
       model,
       systemPrompt,
       tools: allTools,
+      messages: initialMessages, // セッション履歴を初期化時に設定
+      hooks, // セッション永続化フックなどを設定
     });
+
+    if (initialMessages && initialMessages.length > 0) {
+      logger.info(`✅ セッション履歴を復元: ${initialMessages.length}件のメッセージ`);
+    }
+    if (hooks && hooks.length > 0) {
+      logger.info(`✅ ${hooks.length}個のフックを登録`);
+    }
 
     logger.info('✅ Strands Agent の初期化が完了しました');
     return agent;

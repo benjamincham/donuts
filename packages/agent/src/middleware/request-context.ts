@@ -4,7 +4,28 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { createRequestContext, runWithContext } from '../context/request-context.js';
+import { createRequestContext, runWithContext } from '../context/request-context';
+
+/**
+ * JWT から userId を抽出する（簡易実装）
+ * 本格的な実装では jwt ライブラリを使用することを推奨
+ */
+function extractUserIdFromJWT(authHeader?: string): string | undefined {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return undefined;
+  }
+
+  try {
+    const token = authHeader.substring(7); // 'Bearer ' を削除
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+
+    // 一般的な JWT クレームから userId を抽出
+    return payload.sub || payload.userId || payload.user_id || payload.username;
+  } catch (error) {
+    console.warn('JWT の解析に失敗:', error);
+    return undefined;
+  }
+}
 
 /**
  * リクエストコンテキストを設定するミドルウェア
@@ -16,12 +37,20 @@ export function requestContextMiddleware(req: Request, res: Response, next: Next
     req.headers.authorization ||
     (req.headers['x-amzn-bedrock-agentcore-runtime-custom-authorization'] as string);
 
+  // JWT から userId を抽出
+  const userId = extractUserIdFromJWT(authHeader);
+
   // リクエストコンテキストを作成
   const requestContext = createRequestContext(authHeader);
+  // userId を設定
+  if (userId) {
+    requestContext.userId = userId;
+  }
 
   // デバッグログ
   console.log(`📝 Request context middleware activated:`, {
     requestId: requestContext.requestId,
+    userId: requestContext.userId,
     hasAuth: !!authHeader,
     authType: authHeader?.split(' ')[0] || 'None',
     path: req.path,

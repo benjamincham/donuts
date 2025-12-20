@@ -5,10 +5,11 @@
 
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import { Agent, Message } from '@strands-agents/sdk';
-import { createAgent } from './agent.js';
-import { getContextMetadata } from './context/request-context.js';
-import { requestContextMiddleware } from './middleware/request-context.js';
+import { createAgent } from './agent';
+import { getContextMetadata } from './context/request-context';
+import { requestContextMiddleware } from './middleware/request-context';
+import { createSessionStorage, SessionPersistenceHook } from './session/index';
+import type { SessionConfig } from './session/types';
 
 /**
  * Strands Agents ストリーミングイベントを安全にシリアライズ
@@ -163,7 +164,12 @@ const corsOptions = {
     }
   },
   methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Amzn-Bedrock-AgentCore-Runtime-Session-Id'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Amzn-Bedrock-AgentCore-Runtime-Session-Id',
+    'X-Actor-Id',
+  ],
   credentials: true,
   maxAge: 86400, // preflight キャッシュ 24時間
 };
@@ -171,77 +177,8 @@ const corsOptions = {
 // CORS ミドルウェアを適用
 app.use(cors(corsOptions));
 
-// Agent インスタンス（遅延初期化）
-let agent: Agent | null = null;
-let initializationPromise: Promise<void> | null = null;
-
-// セッション履歴管理
-interface SessionHistory {
-  sessionId: string;
-  messages: Message[];
-  lastAccessed: Date;
-}
-
-// セッション履歴を保存するMap（本来はRedisなどの永続化ストレージを使用）
-const sessionHistories = new Map<string, SessionHistory>();
-
-/**
- * セッション履歴を取得または作成
- */
-function getOrCreateSessionHistory(sessionId: string): SessionHistory {
-  let history = sessionHistories.get(sessionId);
-  if (!history) {
-    history = {
-      sessionId,
-      messages: [],
-      lastAccessed: new Date(),
-    };
-    sessionHistories.set(sessionId, history);
-    console.log(`📝 新しいセッション履歴を作成: ${sessionId}`);
-  } else {
-    history.lastAccessed = new Date();
-  }
-  return history;
-}
-
-/**
- * セッション履歴にメッセージを追加
- */
-function addMessageToSession(sessionId: string, message: Message): void {
-  const history = getOrCreateSessionHistory(sessionId);
-  history.messages.push(message);
-  console.log(`💬 メッセージを履歴に追加 (${sessionId}): ${history.messages.length}件`);
-}
-
-// Agent の遅延初期化（最初のリクエスト時に実行）
-async function ensureAgentInitialized(): Promise<void> {
-  // 既に初期化済みの場合はスキップ
-  if (agent) {
-    return;
-  }
-
-  // 初期化中の場合は既存のPromiseを待機
-  if (initializationPromise) {
-    await initializationPromise;
-    return;
-  }
-
-  // 新しい初期化プロセスを開始
-  initializationPromise = (async () => {
-    try {
-      console.log('🤖 AgentCore AI Agent を初期化中... (遅延初期化)');
-      agent = await createAgent();
-      console.log('✅ AI Agent の準備が完了しました！');
-    } catch (error) {
-      console.error('💥 AI Agent の初期化に失敗しました:', error);
-      // 初期化に失敗した場合、次回リクエストで再試行できるようにPromiseをクリア
-      initializationPromise = null;
-      throw error;
-    }
-  })();
-
-  await initializationPromise;
-}
+// セッションストレージの初期化（環境変数に基づく切り替え）
+const sessionStorage = createSessionStorage();
 
 // リクエストボディを JSON として受け取る設定
 app.use(express.json());
@@ -262,22 +199,11 @@ app.get('/ping', (req: Request, res: Response) => {
 
 /**
  * Agent 呼び出しエンドポイント（ストリーミング対応）
- * ユーザーからのクエリを受け取り、Agent のストリーミングレスポンスを NDJSON 形式で返す
+ * セッションごとに Agent を作成し、履歴の永続化を行う
  */
 app.post('/invocations', async (req: Request, res: Response) => {
   try {
-    // リクエストコンテキスト内でAgentを初期化（JWTが利用可能）
-    await ensureAgentInitialized();
-
-    // Agent が初期化されているかチェック（念のため）
-    if (!agent) {
-      return res.status(503).json({
-        error: 'Service Unavailable',
-        message: 'Agent initialization failed',
-      });
-    }
-
-    // リクエストボディからプロンプトを取得（JSON 形式）
+    // リクエストボディからプロンプトを取得
     const prompt = req.body?.prompt || '';
 
     if (!prompt.trim()) {
@@ -286,36 +212,42 @@ app.post('/invocations', async (req: Request, res: Response) => {
       });
     }
 
-    // セッションIDをヘッダーから取得
+    // セッションID をヘッダーから取得
     const sessionId = req.headers['x-amzn-bedrock-agentcore-runtime-session-id'] as string;
 
+    if (!sessionId) {
+      return res.status(400).json({
+        error: 'Missing session ID',
+        message: 'X-Amzn-Bedrock-AgentCore-Runtime-Session-Id header is required',
+      });
+    }
+
+    // RequestContext から userId を取得
     const contextMeta = getContextMetadata();
+    const actorId = contextMeta.userId || 'anonymous';
+
     console.log(`📝 Received prompt (${contextMeta.requestId}): ${prompt}`);
+    console.log(`👤 Actor ID (from JWT): ${actorId}`);
     console.log(`🔗 Session ID: ${sessionId}`);
+
+    // セッション設定
+    const sessionConfig: SessionConfig = { actorId, sessionId };
+
+    // セッション履歴を復元
+    const savedMessages = await sessionStorage.loadMessages(sessionConfig);
+    console.log(`📖 セッション履歴を復元: ${savedMessages.length}件のメッセージ`);
+
+    // セッション永続化フックを作成
+    const sessionHook = new SessionPersistenceHook(sessionStorage, sessionConfig);
+
+    // セッション用の Agent を作成
+    const agent = await createAgent(savedMessages, [sessionHook]);
 
     // ストリーミングレスポンス用のヘッダー設定
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no'); // nginx のバッファリング無効
-
-    // セッション履歴を取得
-    const sessionHistory = sessionId ? getOrCreateSessionHistory(sessionId) : null;
-
-    // ユーザーメッセージを作成
-    const userMessage: Message = {
-      type: 'message',
-      role: 'user',
-      content: [{ type: 'textBlock', text: prompt }],
-    };
-
-    // セッション履歴にユーザーメッセージを追加
-    if (sessionHistory) {
-      addMessageToSession(sessionId, userMessage);
-    }
-
-    // Agent をストリーミングで呼び出し
-    let finalMessage: Message | undefined;
 
     try {
       console.log(`🔄 Agent ストリーミング開始 (${contextMeta.requestId})`);
@@ -325,11 +257,6 @@ app.post('/invocations', async (req: Request, res: Response) => {
         // 循環参照を回避してイベントをシリアライズ
         const safeEvent = serializeStreamEvent(event);
         res.write(`${JSON.stringify(safeEvent)}\n`);
-
-        // 最終メッセージを記録（セッション履歴用）
-        if (event.type === 'afterModelCallEvent' && event.stopData?.message) {
-          finalMessage = event.stopData.message;
-        }
       }
 
       console.log(`✅ Agent ストリーミング完了 (${contextMeta.requestId})`);
@@ -341,15 +268,11 @@ app.post('/invocations', async (req: Request, res: Response) => {
           requestId: contextMeta.requestId,
           duration: contextMeta.duration,
           sessionId: sessionId,
-          conversationLength: sessionHistory?.messages.length || 1,
+          actorId: actorId,
+          conversationLength: agent.messages.length,
         },
       };
       res.write(`${JSON.stringify(completionEvent)}\n`);
-
-      // Assistant の応答をセッション履歴に追加
-      if (sessionHistory && finalMessage) {
-        addMessageToSession(sessionId, finalMessage);
-      }
 
       res.end();
     } catch (streamError) {

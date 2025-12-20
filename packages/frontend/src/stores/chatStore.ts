@@ -4,6 +4,16 @@ import { nanoid } from 'nanoid';
 import type { ChatState, Message } from '../types/index';
 import { streamAgentResponse } from '../api/agent';
 
+// React Router のナビゲート関数を格納する変数
+let navigateFunction: ((to: string, options?: { replace?: boolean }) => void) | null = null;
+
+// ナビゲート関数を設定するヘルパー関数
+export const setNavigateFunction = (
+  navigate: (to: string, options?: { replace?: boolean }) => void
+) => {
+  navigateFunction = navigate;
+};
+
 interface ChatActions {
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => string;
   updateMessage: (id: string, updates: Partial<Message>) => void;
@@ -51,10 +61,16 @@ export const useChatStore = create<ChatStore>()(
         const { addMessage, updateMessage } = get();
         let { sessionId } = get();
 
-        // セッションIDがない場合は生成
+        // セッションIDがない場合は新しく生成（初回メッセージ送信時）
         if (!sessionId) {
-          sessionId = nanoid(33); // 33文字以上で生成
+          sessionId = nanoid(33);
           set({ sessionId });
+
+          // URL を更新して sessionId を反映
+          if (navigateFunction) {
+            console.log(`🆕 新しいセッションを作成: ${sessionId}`);
+            navigateFunction(`/chat/${sessionId}`, { replace: true });
+          }
         }
 
         try {
@@ -84,17 +100,13 @@ export const useChatStore = create<ChatStore>()(
                 isStreaming: true,
               });
             },
-            onComplete: (metadata: Record<string, unknown>) => {
+            onComplete: (_metadata: Record<string, unknown>) => {
               updateMessage(assistantMessageId, {
                 isStreaming: false,
               });
 
-              // セッションIDが返されたら保存
-              if (metadata?.sessionId && typeof metadata.sessionId === 'string') {
-                set({ sessionId: metadata.sessionId });
-              }
-
               set({ isLoading: false });
+              console.log(`✅ メッセージ送信完了 (セッション: ${sessionId})`);
             },
             onError: (error: Error) => {
               // エラーメッセージで更新
@@ -122,7 +134,7 @@ export const useChatStore = create<ChatStore>()(
       clearMessages: () => {
         set({
           messages: [],
-          sessionId: null,
+          // sessionId は URL から管理されるためクリアしない
         });
       },
 

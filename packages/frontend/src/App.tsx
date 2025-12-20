@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
 import { LoginForm } from './features/auth/LoginForm';
-import { ChatContainer } from './components/ChatContainer';
+import { ChatPage } from './pages/ChatPage';
 import { getCurrentUserSession, validateCognitoConfig } from './lib/cognito';
 
 function App() {
@@ -34,9 +35,18 @@ function App() {
     checkExistingSession();
   }, [setUser, setLoading, setError]);
 
-  // 認証状態に応じて適切なコンポーネントを表示
+  // 認証状態に応じてルーティングを設定
   if (isAuthenticated) {
-    return <ChatContainer />;
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Navigate to="/chat" replace />} />
+          <Route path="/chat" element={<ChatPage />} />
+          <Route path="/chat/:sessionId" element={<ChatPage />} />
+          <Route path="*" element={<Navigate to="/chat" replace />} />
+        </Routes>
+      </BrowserRouter>
+    );
   }
 
   return <LoginForm />;

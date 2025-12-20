@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChatContainer } from '../components/ChatContainer';
+import { SessionSidebar } from '../components/SessionSidebar';
 import { useChatStore, setNavigateFunction } from '../stores/chatStore';
+import { useSessionStore } from '../stores/sessionStore';
 
 /**
  * チャットページ
@@ -11,7 +13,9 @@ import { useChatStore, setNavigateFunction } from '../stores/chatStore';
 export function ChatPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
-  const { setSessionId, clearMessages } = useChatStore();
+
+  const { setSessionId, clearMessages, loadSessionHistory } = useChatStore();
+  const { sessionEvents, activeSessionId, isLoadingEvents } = useSessionStore();
 
   // navigate 関数を chatStore に設定
   useEffect(() => {
@@ -33,5 +37,25 @@ export function ChatPage() {
     }
   }, [sessionId, setSessionId, clearMessages]);
 
-  return <ChatContainer />;
+  // セッション履歴を chatStore に復元
+  useEffect(() => {
+    if (
+      sessionId &&
+      activeSessionId === sessionId &&
+      sessionEvents.length > 0 &&
+      !isLoadingEvents
+    ) {
+      console.log(`📖 セッション履歴を ChatStore に復元: ${sessionId}`);
+      loadSessionHistory(sessionEvents);
+    }
+  }, [sessionId, activeSessionId, sessionEvents, isLoadingEvents, loadSessionHistory]);
+
+  return (
+    <>
+      <SessionSidebar />
+      <div className="flex-1 flex flex-col min-w-0">
+        <ChatContainer />
+      </div>
+    </>
+  );
 }

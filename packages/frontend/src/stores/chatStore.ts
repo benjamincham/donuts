@@ -3,6 +3,7 @@ import { devtools } from 'zustand/middleware';
 import { nanoid } from 'nanoid';
 import type { ChatState, Message } from '../types/index';
 import { streamAgentResponse } from '../api/agent';
+import type { ConversationMessage } from '../api/sessions';
 
 // React Router のナビゲート関数を格納する変数
 let navigateFunction: ((to: string, options?: { replace?: boolean }) => void) | null = null;
@@ -23,6 +24,7 @@ interface ChatActions {
   setError: (error: string | null) => void;
   clearError: () => void;
   setSessionId: (sessionId: string | null) => void;
+  loadSessionHistory: (conversationMessages: ConversationMessage[]) => void;
 }
 
 type ChatStore = ChatState & ChatActions;
@@ -152,6 +154,26 @@ export const useChatStore = create<ChatStore>()(
 
       setSessionId: (sessionId: string | null) => {
         set({ sessionId });
+      },
+
+      loadSessionHistory: (conversationMessages: ConversationMessage[]) => {
+        console.log(`📖 会話履歴を復元中: ${conversationMessages.length}件のメッセージ`);
+
+        // ConversationMessage を Message 型に変換
+        const messages: Message[] = conversationMessages.map((convMsg) => ({
+          id: convMsg.id,
+          type: convMsg.type,
+          content: convMsg.content,
+          timestamp: new Date(convMsg.timestamp),
+          isStreaming: false, // 履歴データはストリーミング中ではない
+        }));
+
+        set({
+          messages,
+          error: null, // エラーをクリア
+        });
+
+        console.log(`✅ 会話履歴の復元完了: ${messages.length}件のメッセージ`);
       },
     }),
     {

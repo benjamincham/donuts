@@ -39,12 +39,14 @@ function App() {
   if (isAuthenticated) {
     return (
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Navigate to="/chat" replace />} />
-          <Route path="/chat" element={<ChatPage />} />
-          <Route path="/chat/:sessionId" element={<ChatPage />} />
-          <Route path="*" element={<Navigate to="/chat" replace />} />
-        </Routes>
+        <div className="h-screen flex bg-gray-100">
+          <Routes>
+            <Route path="/" element={<Navigate to="/chat" replace />} />
+            <Route path="/chat" element={<ChatPage />} />
+            <Route path="/chat/:sessionId" element={<ChatPage />} />
+            <Route path="*" element={<Navigate to="/chat" replace />} />
+          </Routes>
+        </div>
       </BrowserRouter>
     );
   }

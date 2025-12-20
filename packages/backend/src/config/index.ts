@@ -28,6 +28,10 @@ const envSchema = z.object({
   // JWT 設定
   JWT_ISSUER: z.string().optional(),
   JWT_AUDIENCE: z.string().optional(),
+
+  // AgentCore Memory 設定
+  AGENTCORE_MEMORY_ID: z.string().optional(),
+  AWS_REGION: z.string().default('us-east-1'),
 });
 
 /**
@@ -78,6 +82,12 @@ export const config = {
   // CORS 設定
   cors: {
     allowedOrigins: env.CORS_ALLOWED_ORIGINS.split(',').map((origin) => origin.trim()),
+  },
+
+  // AgentCore Memory 設定
+  agentcore: {
+    memoryId: env.AGENTCORE_MEMORY_ID,
+    region: env.AWS_REGION,
   },
 } as const;
 

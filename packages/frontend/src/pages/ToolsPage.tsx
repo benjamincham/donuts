@@ -53,18 +53,19 @@ function ToolItem({ tool }: ToolItemProps) {
         <div className="space-y-2">
           {Object.entries(properties).map(([paramName, paramInfo]) => {
             const info = paramInfo as Record<string, unknown>;
+            const typeString = typeof info.type === 'string' ? info.type : 'unknown';
+            const description = typeof info.description === 'string' ? info.description : null;
+
             return (
               <div key={paramName} className="bg-gray-50 px-3 py-2 rounded text-xs">
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-blue-600">{paramName}</span>
-                  <span className="text-gray-500">({String(info.type) || 'unknown'})</span>
+                  <span className="text-gray-500">({typeString})</span>
                   {required.includes(paramName) && (
                     <span className="text-red-500 text-xs">*required</span>
                   )}
                 </div>
-                {info.description && typeof info.description === 'string' && (
-                  <p className="text-gray-600 mt-1">{info.description}</p>
-                )}
+                {description && <p className="text-gray-600 mt-1">{description}</p>}
               </div>
             );
           })}

@@ -5,6 +5,7 @@ import { LoginForm } from './features/auth/LoginForm';
 import { ChatPage } from './pages/ChatPage';
 import { ToolsPage } from './pages/ToolsPage';
 import { getCurrentUserSession, validateCognitoConfig } from './lib/cognito';
+import { initializeAgentStore } from './stores/agentStore';
 
 function App() {
   const { isAuthenticated, setUser, setLoading, setError } = useAuthStore();
@@ -15,6 +16,9 @@ function App() {
       setError('Cognito設定が不完全です。環境変数を確認してください。');
       return;
     }
+
+    // AgentStoreを初期化
+    initializeAgentStore();
 
     // 既存のセッションを確認
     const checkExistingSession = async () => {

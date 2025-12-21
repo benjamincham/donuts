@@ -2,7 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import { useChatStore } from '../stores/chatStore';
 
-export const MessageInput: React.FC = () => {
+interface MessageInputProps {
+  getScenarioPrompt?: () => string | null;
+}
+
+export const MessageInput: React.FC<MessageInputProps> = ({ getScenarioPrompt }) => {
   const { sendPrompt, isLoading, clearError } = useChatStore();
   const [input, setInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -15,6 +19,26 @@ export const MessageInput: React.FC = () => {
       textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
     }
   }, [input]);
+
+  // シナリオプロンプトの自動入力
+  useEffect(() => {
+    if (getScenarioPrompt) {
+      const scenarioPrompt = getScenarioPrompt();
+      if (scenarioPrompt) {
+        // 次のフレームで実行してカスケードレンダリングを防ぐ
+        requestAnimationFrame(() => {
+          setInput(scenarioPrompt);
+          // フォーカスを当ててカーソルを末尾に移動
+          setTimeout(() => {
+            if (textareaRef.current) {
+              textareaRef.current.focus();
+              textareaRef.current.setSelectionRange(scenarioPrompt.length, scenarioPrompt.length);
+            }
+          }, 0);
+        });
+      }
+    }
+  }, [getScenarioPrompt]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);

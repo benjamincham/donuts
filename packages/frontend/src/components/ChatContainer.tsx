@@ -1,14 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Trash2, LogOut, User } from 'lucide-react';
+import { Trash2, LogOut, User, Bot } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useChatStore } from '../stores/chatStore';
+import { useSelectedAgent } from '../stores/agentStore';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
+import { AgentSelectorModal } from './AgentSelectorModal';
+import type { Agent } from '../types/agent';
 
 export const ChatContainer: React.FC = () => {
   const { user, logout } = useAuthStore();
-  const { clearMessages, messages, sessionId } = useChatStore();
+  const { clearMessages, messages } = useChatStore();
+  const selectedAgent = useSelectedAgent();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
+  const [selectedScenarioPrompt, setSelectedScenarioPrompt] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = async () => {
@@ -21,6 +27,26 @@ export const ChatContainer: React.FC = () => {
 
   const handleClearChat = () => {
     clearMessages();
+  };
+
+  // シナリオクリック処理
+  const handleScenarioClick = (prompt: string) => {
+    setSelectedScenarioPrompt(prompt);
+  };
+
+  // シナリオプロンプト取得関数（MessageInputに渡す）
+  const getScenarioPrompt = () => {
+    const prompt = selectedScenarioPrompt;
+    if (prompt) {
+      setSelectedScenarioPrompt(null); // 一度だけ使用
+    }
+    return prompt;
+  };
+
+  // Agent選択処理
+  const handleAgentSelect = (agent: Agent | null) => {
+    // Agent選択は AgentStore で管理されているのでここでは何もしない
+    console.log('Agent selected:', agent?.name || 'None');
   };
 
   // ドロップダウン外クリックで閉じる
@@ -47,11 +73,15 @@ export const ChatContainer: React.FC = () => {
       <header className="flex items-center justify-between p-4 bg-white">
         <div className="flex items-center">
           <div>
-            <h1 className="text-lg font-semibold text-gray-900">AgentCore Chat</h1>
-            <p className="text-sm text-gray-500">
-              {sessionId ? `セッション: ${sessionId.slice(0, 8)}...` : 'セッション未開始'}
-              {messages.length > 0 && ` • ${messages.length} メッセージ`}
-            </p>
+            <button
+              onClick={() => setIsAgentModalOpen(true)}
+              className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors group"
+            >
+              <Bot className="w-6 h-6 text-gray-700" />
+              <h1 className="text-lg font-semibold text-gray-900">
+                {selectedAgent ? selectedAgent.name : 'Software Developer'}
+              </h1>
+            </button>
           </div>
         </div>
 
@@ -102,10 +132,17 @@ export const ChatContainer: React.FC = () => {
       </header>
 
       {/* メッセージリスト */}
-      <MessageList />
+      <MessageList onScenarioClick={handleScenarioClick} />
 
       {/* メッセージ入力 */}
-      <MessageInput />
+      <MessageInput getScenarioPrompt={getScenarioPrompt} />
+
+      {/* Agent選択モーダル */}
+      <AgentSelectorModal
+        isOpen={isAgentModalOpen}
+        onClose={() => setIsAgentModalOpen(false)}
+        onAgentSelect={handleAgentSelect}
+      />
     </div>
   );
 };

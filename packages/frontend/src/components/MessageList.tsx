@@ -1,9 +1,15 @@
 import React, { useEffect, useRef } from 'react';
 import { useChatStore } from '../stores/chatStore';
+import { useSelectedAgent } from '../stores/agentStore';
 import { Message } from './Message';
 
-export const MessageList: React.FC = () => {
+interface MessageListProps {
+  onScenarioClick?: (prompt: string) => void;
+}
+
+export const MessageList: React.FC<MessageListProps> = ({ onScenarioClick }) => {
   const { messages, error } = useChatStore();
+  const selectedAgent = useSelectedAgent();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // 新しいメッセージが追加されたときに自動スクロール
@@ -36,7 +42,30 @@ export const MessageList: React.FC = () => {
         )}
 
         {/* ウェルカムメッセージ（メッセージがない場合） */}
-        {messages.length === 0 && !error && (
+        {messages.length === 0 && !error && selectedAgent && (
+          <div className="text-center py-12">
+            <h3 className="text-2xl font-semibold text-gray-900 mb-2">{selectedAgent.name}</h3>
+            <p className="text-gray-600 max-w-md mx-auto mb-8">{selectedAgent.description}</p>
+
+            {/* シナリオボタン（グリッド形式） */}
+            {selectedAgent.scenarios.length > 0 && (
+              <div className="grid grid-cols-2 gap-3 max-w-lg mx-auto">
+                {selectedAgent.scenarios.map((scenario) => (
+                  <button
+                    key={scenario.id}
+                    onClick={() => onScenarioClick?.(scenario.prompt)}
+                    className="px-4 py-3 text-left text-sm text-gray-700 bg-white hover:bg-gray-50 rounded-xl border border-gray-200 transition-colors"
+                  >
+                    {scenario.title}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* デフォルトウェルカムメッセージ（エージェントが選択されていない場合） */}
+        {messages.length === 0 && !error && !selectedAgent && (
           <div className="text-center py-12">
             <div className="mx-auto w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
               <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
 import { LoginForm } from './features/auth/LoginForm';
+import { HomePage } from './pages/HomePage';
 import { ChatPage } from './pages/ChatPage';
 import { ToolsPage } from './pages/ToolsPage';
 import { getCurrentUserSession, validateCognitoConfig } from './lib/cognito';
@@ -46,7 +47,7 @@ function App() {
       <BrowserRouter>
         <div className="h-screen flex">
           <Routes>
-            <Route path="/" element={<Navigate to="/chat" replace />} />
+            <Route path="/" element={<HomePage />} />
             <Route path="/chat" element={<ChatPage />} />
             <Route path="/chat/:sessionId" element={<ChatPage />} />
             <Route path="/tools" element={<ToolsPage />} />

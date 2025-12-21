@@ -115,6 +115,12 @@ export function SessionSidebar() {
     navigate('/tools');
   };
 
+  // ホームページ遷移
+  const handleHomeNavigate = () => {
+    console.log('🏠 ホームページへナビゲート');
+    navigate('/');
+  };
+
   // サイドバー折りたたみ
   const handleToggleSidebar = () => {
     toggleSidebar();
@@ -135,10 +141,16 @@ export function SessionSidebar() {
         >
           {isSidebarOpen ? (
             <>
-              <div className="flex items-center ml-2 gap-2">
-                <Donut className="w-5 h-5 text-gray-700" />
-                <span className="text-lg font-semibold text-gray-900">Donuts</span>
-              </div>
+              <button
+                onClick={handleHomeNavigate}
+                className="flex items-center ml-2 gap-2 hover:bg-gray-100 rounded-lg p-1 transition-colors group"
+                title="ホームページに戻る"
+              >
+                <Donut className="w-5 h-5 text-gray-700 group-hover:text-amber-600 transition-colors" />
+                <span className="text-lg font-semibold text-gray-900 group-hover:text-amber-700 transition-colors">
+                  Donuts
+                </span>
+              </button>
               <button
                 onClick={handleToggleSidebar}
                 className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"

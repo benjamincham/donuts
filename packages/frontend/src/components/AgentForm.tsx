@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, X, Save, AlertCircle, Bot } from 'lucide-react';
+import { Plus, X, Save, AlertCircle } from 'lucide-react';
 import { ToolSelector } from './ToolSelector';
 import type { CreateAgentInput, Agent, Scenario } from '../types/agent';
 
@@ -138,14 +138,6 @@ export const AgentForm: React.FC<AgentFormProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* ヘッダー */}
-      <div className="flex items-center space-x-3">
-        <Bot className="w-6 h-6 text-blue-600" />
-        <h2 className="text-xl font-semibold text-gray-900">
-          {agent ? 'Agent編集' : '新規Agent作成'}
-        </h2>
-      </div>
-
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Agent名 */}
         <div>
@@ -192,7 +184,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
             }}
             disabled={isLoading}
             placeholder="このAgentの用途や特徴を説明してください"
-            rows={3}
+            rows={1}
             className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed resize-none ${
               errors.description ? 'border-red-500' : 'border-gray-300'
             }`}

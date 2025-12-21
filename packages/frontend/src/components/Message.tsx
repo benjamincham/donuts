@@ -13,7 +13,9 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
   const isUser = message.type === 'user';
 
   // Markdownカスタムコンポーネント
+
   const markdownComponents = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     code: ({ inline, className, children, ...props }: any) => {
       const match = /language-(\w+)/.exec(className || '');
       return !inline && match ? (
@@ -33,6 +35,7 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
       );
     },
     // テーブルのスタイル調整
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     table: ({ children, ...props }: any) => (
       <div className="overflow-x-auto my-4">
         <table className="min-w-full border-collapse border border-gray-300" {...props}>
@@ -40,6 +43,7 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
         </table>
       </div>
     ),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     th: ({ children, ...props }: any) => (
       <th
         className="border border-gray-300 px-4 py-2 bg-gray-50 font-semibold text-left"
@@ -48,12 +52,14 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
         {children}
       </th>
     ),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     td: ({ children, ...props }: any) => (
       <td className="border border-gray-300 px-4 py-2" {...props}>
         {children}
       </td>
     ),
     // 引用のスタイル
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     blockquote: ({ children, ...props }: any) => (
       <blockquote
         className="border-l-4 border-gray-300 pl-4 py-2 my-4 bg-gray-50 italic"

@@ -5,7 +5,17 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Donut, SquarePen, Search, PanelRight, Wrench, User, LogOut, X } from 'lucide-react';
+import {
+  Donut,
+  SquarePen,
+  Search,
+  PanelRight,
+  Wrench,
+  User,
+  LogOut,
+  X,
+  Settings,
+} from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useSessionStore } from '../stores/sessionStore';
 import { useUIStore } from '../stores/uiStore';
@@ -146,6 +156,13 @@ export function SessionSidebar() {
   // サイドバー折りたたみ
   const handleToggleSidebar = () => {
     toggleSidebar();
+  };
+
+  // 設定画面遷移
+  const handleSettings = () => {
+    console.log('⚙️ 設定画面へナビゲート');
+    navigate('/settings');
+    setIsUserDropdownOpen(false); // ドロップダウンを閉じる
   };
 
   // ログアウト処理
@@ -366,6 +383,15 @@ export function SessionSidebar() {
                   <p className="text-xs text-gray-500">認証済み</p>
                 </div>
               )}
+
+              {/* 設定 */}
+              <button
+                onClick={handleSettings}
+                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+              >
+                <Settings className="w-4 h-4" />
+                設定
+              </button>
 
               {/* ログアウト */}
               <button

@@ -7,8 +7,41 @@ import {
   BedrockAgentCoreClient,
   ListSessionsCommand,
   ListEventsCommand,
+  ListMemoryRecordsCommand,
+  DeleteMemoryRecordCommand,
+  RetrieveMemoryRecordsCommand,
 } from '@aws-sdk/client-bedrock-agentcore';
 import { config } from '../config/index.js';
+
+/**
+ * AWS SDK の型定義が不完全な部分を補完する型定義
+ */
+interface MemoryRecordSummary {
+  memoryRecordId?: string;
+  content?: string | { text?: string };
+  createdAt?: Date;
+  namespaces?: string[];
+  memoryStrategyId?: string;
+  metadata?: Record<string, unknown>;
+}
+
+interface DeleteMemoryRecordParams {
+  memoryId: string;
+  namespace: string;
+  memoryStrategyId: string;
+  memoryRecordId: string;
+}
+
+interface RetrieveMemoryRecordsParams {
+  memoryId: string;
+  namespace: string;
+  searchCriteria: {
+    searchQuery: string;
+    memoryStrategyId: string;
+    topK: number;
+  };
+  maxResults: number;
+}
 
 /**
  * セッション情報の型定義（Frontend 向けに整形済み）
@@ -222,6 +255,25 @@ function extractFirstText(contents: MessageContent[]): string {
 }
 
 /**
+ * 長期記憶レコードの型定義
+ */
+export interface MemoryRecord {
+  recordId: string;
+  namespace: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * 長期記憶レコード一覧の型定義
+ */
+export interface MemoryRecordList {
+  records: MemoryRecord[];
+  nextToken?: string;
+}
+
+/**
  * AgentCore Memory サービスクラス
  */
 export class AgentCoreMemoryService {
@@ -410,6 +462,254 @@ export class AgentCoreMemoryService {
       createdAt,
       updatedAt,
     };
+  }
+
+  /**
+   * 長期記憶レコード一覧を取得
+   * @param actorId ユーザーID
+   * @param memoryStrategyId 記憶戦略ID（例: preference_builtin_cdkGen0001-L84bdDEgeO）
+   * @param nextToken ページネーション用トークン
+   * @returns 長期記憶レコード一覧
+   */
+  async listMemoryRecords(
+    actorId: string,
+    memoryStrategyId: string,
+    nextToken?: string
+  ): Promise<MemoryRecordList> {
+    try {
+      console.log(
+        `[AgentCoreMemoryService] 長期記憶レコード一覧を取得中: actorId=${actorId}, memoryStrategyId=${memoryStrategyId}`
+      );
+
+      // namespace形式を正しい形式に修正
+      const namespace = `/strategies/${memoryStrategyId}/actors/${actorId}`;
+
+      const command = new ListMemoryRecordsCommand({
+        memoryId: this.memoryId,
+        namespace: namespace,
+        memoryStrategyId: memoryStrategyId,
+        maxResults: 50,
+        nextToken: nextToken,
+      });
+
+      const response = await this.client.send(command);
+
+      // AWS SDKのレスポンス型にmemoryRecordSummariesが含まれていない場合の型アサーション
+      const extendedResponse = response as typeof response & {
+        memoryRecordSummaries?: MemoryRecordSummary[];
+      };
+
+      if (!extendedResponse.memoryRecordSummaries) {
+        console.log(
+          `[AgentCoreMemoryService] 長期記憶レコードが見つかりませんでした: memoryStrategyId=${memoryStrategyId}`
+        );
+        return { records: [] };
+      }
+
+      const records: MemoryRecord[] = extendedResponse.memoryRecordSummaries.map(
+        (record, index: number) => {
+          // デバッグログ: memoryRecordSummariesの構造を確認
+          if (index < 2) {
+            // 最初の2件のみログ出力
+            console.log(`[AgentCoreMemoryService] Record ${index} structure:`, {
+              recordId: record.memoryRecordId,
+              recordIdType: typeof record.memoryRecordId,
+              availableKeys: Object.keys(record),
+              fullRecord: record,
+            });
+          }
+
+          // contentがオブジェクトの場合はtextプロパティを抽出
+          let content = '';
+          if (typeof record.content === 'object' && record.content?.text) {
+            content = record.content.text;
+          } else if (typeof record.content === 'string') {
+            content = record.content;
+          } else if (record.content) {
+            content = JSON.stringify(record.content);
+          }
+
+          // recordIdが空の場合は警告ログ
+          const recordId = record.memoryRecordId || '';
+          if (!recordId) {
+            console.warn(
+              `[AgentCoreMemoryService] Empty recordId found in record ${index}:`,
+              record
+            );
+          }
+
+          return {
+            recordId: recordId,
+            namespace: namespace,
+            content: content,
+            createdAt: record.createdAt?.toISOString() || new Date().toISOString(),
+            updatedAt: record.createdAt?.toISOString() || new Date().toISOString(), // AWS SDK doesn't provide updatedAt
+          };
+        }
+      );
+
+      console.log(`[AgentCoreMemoryService] ${records.length} 件の長期記憶レコードを取得しました`);
+      return {
+        records,
+        nextToken: response.nextToken,
+      };
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ResourceNotFoundException') {
+        console.log(
+          `[AgentCoreMemoryService] 長期記憶レコードが存在しません: memoryStrategyId=${memoryStrategyId}`
+        );
+        return { records: [] };
+      }
+      console.error('[AgentCoreMemoryService] 長期記憶レコード一覧取得エラー:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 長期記憶レコードを削除
+   * @param actorId ユーザーID
+   * @param memoryStrategyId 記憶戦略ID
+   * @param recordId レコードID
+   */
+  async deleteMemoryRecord(
+    actorId: string,
+    memoryStrategyId: string,
+    recordId: string
+  ): Promise<void> {
+    try {
+      console.log(
+        `[AgentCoreMemoryService] 長期記憶レコードを削除中: recordId=${recordId}, memoryStrategyId=${memoryStrategyId}`
+      );
+
+      // namespace形式を正しい形式に修正
+      const namespace = `/strategies/${memoryStrategyId}/actors/${actorId}`;
+
+      const deleteParams: DeleteMemoryRecordParams = {
+        memoryId: this.memoryId,
+        namespace: namespace,
+        memoryStrategyId: memoryStrategyId,
+        memoryRecordId: recordId, // recordId → memoryRecordId に修正
+      };
+
+      console.log(`[AgentCoreMemoryService] 削除パラメータ:`, deleteParams);
+
+      const command = new DeleteMemoryRecordCommand(deleteParams);
+
+      await this.client.send(command);
+      console.log(`[AgentCoreMemoryService] 長期記憶レコードを削除しました: recordId=${recordId}`);
+    } catch (error) {
+      console.error('[AgentCoreMemoryService] 長期記憶レコード削除エラー:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * セマンティック検索で長期記憶レコードを取得
+   * @param actorId ユーザーID
+   * @param memoryStrategyId 記憶戦略ID
+   * @param query 検索クエリ
+   * @param topK 取得件数（デフォルト: 10）
+   * @param relevanceScore 関連度スコアの閾値（デフォルト: 0.2）
+   * @returns 長期記憶レコード一覧（関連度順）
+   */
+  async retrieveMemoryRecords(
+    actorId: string,
+    memoryStrategyId: string,
+    query: string,
+    topK: number = 10,
+    _relevanceScore: number = 0.2
+  ): Promise<MemoryRecord[]> {
+    try {
+      console.log(
+        `[AgentCoreMemoryService] セマンティック検索を実行中: query=${query}, memoryStrategyId=${memoryStrategyId}`
+      );
+
+      // namespace形式を正しい形式に修正
+      const namespace = `/strategies/${memoryStrategyId}/actors/${actorId}`;
+
+      const retrieveParams: RetrieveMemoryRecordsParams = {
+        memoryId: this.memoryId,
+        namespace: namespace,
+        searchCriteria: {
+          searchQuery: query,
+          memoryStrategyId: memoryStrategyId,
+          topK: topK,
+        },
+        maxResults: 50,
+      };
+
+      const command = new RetrieveMemoryRecordsCommand(retrieveParams);
+
+      const response = await this.client.send(command);
+
+      // AWS SDKのレスポンス型にmemoryRecordSummariesが含まれていない場合の型アサーション
+      const extendedResponse = response as typeof response & {
+        memoryRecordSummaries?: MemoryRecordSummary[];
+      };
+
+      if (!extendedResponse.memoryRecordSummaries) {
+        console.log(
+          `[AgentCoreMemoryService] セマンティック検索結果が見つかりませんでした: query=${query}`
+        );
+        return [];
+      }
+
+      const records: MemoryRecord[] = extendedResponse.memoryRecordSummaries.map(
+        (record: MemoryRecordSummary, index: number) => {
+          // デバッグログ: memoryRecordSummariesの構造を確認
+          if (index < 2) {
+            // 最初の2件のみログ出力
+            console.log(`[AgentCoreMemoryService] Retrieve record ${index} structure:`, {
+              recordId: record.memoryRecordId,
+              recordIdType: typeof record.memoryRecordId,
+              availableKeys: Object.keys(record),
+              fullRecord: record,
+            });
+          }
+
+          // contentがオブジェクトの場合はtextプロパティを抽出
+          let content = '';
+          if (typeof record.content === 'object' && record.content?.text) {
+            content = record.content.text;
+          } else if (typeof record.content === 'string') {
+            content = record.content;
+          } else if (record.content) {
+            content = JSON.stringify(record.content);
+          }
+
+          // recordIdが空の場合は警告ログ
+          const recordId = record.memoryRecordId || '';
+          if (!recordId) {
+            console.warn(
+              `[AgentCoreMemoryService] Empty recordId found in retrieve record ${index}:`,
+              record
+            );
+          }
+
+          return {
+            recordId: recordId,
+            namespace: namespace,
+            content: content,
+            createdAt: record.createdAt?.toISOString() || new Date().toISOString(),
+            updatedAt: record.createdAt?.toISOString() || new Date().toISOString(), // AWS SDK doesn't provide updatedAt
+          };
+        }
+      );
+
+      console.log(
+        `[AgentCoreMemoryService] ${records.length} 件のセマンティック検索結果を取得しました`
+      );
+      return records;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ResourceNotFoundException') {
+        console.log(
+          `[AgentCoreMemoryService] セマンティック検索対象が存在しません: memoryStrategyId=${memoryStrategyId}`
+        );
+        return [];
+      }
+      console.error('[AgentCoreMemoryService] セマンティック検索エラー:', error);
+      throw error;
+    }
   }
 }
 

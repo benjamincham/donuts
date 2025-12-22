@@ -9,6 +9,7 @@ import { config } from './config/index.js';
 import { jwtAuthMiddleware, AuthenticatedRequest, getCurrentAuth } from './middleware/auth.js';
 import sessionsRouter from './routes/sessions.js';
 import toolsRouter from './routes/tools.js';
+import memoryRouter from './routes/memory.js';
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use(express.json());
 // API ルート設定
 app.use('/sessions', sessionsRouter);
 app.use('/tools', toolsRouter);
+app.use('/memory', jwtAuthMiddleware, memoryRouter);
 
 /**
  * ヘルスチェックエンドポイント（認証不要）

@@ -52,7 +52,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <ModalContext.Provider value={{ onClose }}>
-      <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 bg-black/10 flex items-center justify-center p-4">
         <div className="fixed inset-0" onClick={closeOnOverlayClick ? onClose : undefined} />
         <div
           className={cn(

@@ -6,6 +6,7 @@ import { MainLayout } from './layouts/MainLayout';
 import { HomePage } from './pages/HomePage';
 import { ChatPage } from './pages/ChatPage';
 import { ToolsPage } from './pages/ToolsPage';
+import { SettingsPage } from './pages/SettingsPage';
 import { getCurrentUserSession } from './lib/cognito';
 import { initializeAgentStore } from './stores/agentStore';
 
@@ -47,6 +48,7 @@ function App() {
               <Route path="/chat" element={<ChatPage />} />
               <Route path="/chat/:sessionId" element={<ChatPage />} />
               <Route path="/tools" element={<ToolsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/chat" replace />} />
           </Routes>

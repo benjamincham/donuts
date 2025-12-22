@@ -5,6 +5,8 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import type { Message as MessageType } from '../types/index';
 import { TypingIndicator } from './TypingIndicator';
+import { ToolUseBlock } from './ToolUseBlock';
+import { ToolResultBlock } from './ToolResultBlock';
 
 interface MessageProps {
   message: MessageType;
@@ -84,11 +86,46 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
         >
           {/* メッセージ内容 */}
           <div className="prose prose-sm max-w-none">
-            {message.content ? (
-              <div className="markdown-content">
-                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                  {message.content}
-                </ReactMarkdown>
+            {message.contents.length > 0 || !message.isStreaming ? (
+              <div className="message-contents space-y-2">
+                {message.contents.map((content, index) => {
+                  switch (content.type) {
+                    case 'text':
+                      return (
+                        <div key={`text-${index}`} className="markdown-content">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={markdownComponents}
+                          >
+                            {content.text || ''}
+                          </ReactMarkdown>
+                        </div>
+                      );
+
+                    case 'toolUse':
+                      return content.toolUse ? (
+                        <ToolUseBlock key={`tool-use-${index}`} toolUse={content.toolUse} />
+                      ) : null;
+
+                    case 'toolResult':
+                      return content.toolResult ? (
+                        <ToolResultBlock
+                          key={`tool-result-${index}`}
+                          toolResult={content.toolResult}
+                        />
+                      ) : null;
+
+                    default:
+                      return (
+                        <div key={`unknown-${index}`} className="text-gray-500 text-sm">
+                          未対応のコンテンツタイプ: {content.type}
+                        </div>
+                      );
+                  }
+                })}
+
+                {/* コンテンツが空でストリーミング中の場合 */}
+                {message.contents.length === 0 && message.isStreaming && <TypingIndicator />}
               </div>
             ) : (
               <TypingIndicator />

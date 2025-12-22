@@ -4,6 +4,9 @@ import type {
   ModelContentBlockStartEvent,
   ServerCompletionEvent,
   ServerErrorEvent,
+  MessageAddedEvent,
+  ToolUse,
+  ToolResult,
 } from '../types/index';
 import { useAuthStore } from '../stores/authStore';
 
@@ -19,6 +22,8 @@ interface StreamingCallbacks {
   onTextDelta?: (text: string) => void;
   onToolStart?: (toolName: string) => void;
   onToolEnd?: (toolName: string) => void;
+  onToolUse?: (toolUse: ToolUse) => void;
+  onToolResult?: (toolResult: ToolResult) => void;
   onComplete?: (metadata: Record<string, unknown>) => void;
   onError?: (error: Error) => void;
 }
@@ -154,16 +159,80 @@ const handleStreamEvent = (event: AgentStreamEvent, callbacks: StreamingCallback
 
     case 'modelContentBlockStartEvent': {
       const startEvent = event as ModelContentBlockStartEvent;
-      if (startEvent.start?.type === 'toolUseStart' && callbacks.onToolStart) {
-        callbacks.onToolStart(startEvent.start.name || '不明なツール');
+      if (startEvent.start?.type === 'toolUseStart') {
+        // ツール使用開始時の処理
+        if (callbacks.onToolStart) {
+          callbacks.onToolStart(startEvent.start.name || '不明なツール');
+        }
+
+        // ToolUse オブジェクトを作成してコールバックに渡す
+        if (callbacks.onToolUse && startEvent.start.name) {
+          const toolUse: ToolUse = {
+            id: `tool-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            name: startEvent.start.name,
+            input: startEvent.start.input || {},
+            status: 'running',
+            originalToolUseId: startEvent.start.toolUseId || undefined,
+          };
+          callbacks.onToolUse(toolUse);
+        }
       }
       break;
     }
 
     case 'afterToolsEvent': {
+      console.debug('🔧 afterToolsEvent received:', event);
       if (callbacks.onToolEnd) {
-        // ツール名を特定するのは困難なので、汎用的な処理
         callbacks.onToolEnd('ツール実行完了');
+      }
+
+      // afterToolsEventにもtoolResult情報が含まれている可能性があります
+      const afterToolsEventData = event as Record<string, unknown>;
+      if (afterToolsEventData.content && Array.isArray(afterToolsEventData.content)) {
+        afterToolsEventData.content.forEach((block: Record<string, unknown>, index: number) => {
+          console.debug(`🛠️ AfterTools content block ${index}:`, block);
+
+          if (block.type === 'toolResult' && callbacks.onToolResult) {
+            const toolResult: ToolResult = {
+              toolUseId: (block.toolUseId as string) || 'unknown',
+              content: (block.content as string) || JSON.stringify(block),
+              isError: (block.isError as boolean) || false,
+            };
+            console.debug('✅ ToolResult from afterToolsEvent:', toolResult);
+            callbacks.onToolResult(toolResult);
+          }
+        });
+      }
+      break;
+    }
+
+    case 'messageAddedEvent': {
+      // メッセージ追加イベント（ツール結果が含まれる可能性がある）
+      const messageEvent = event as MessageAddedEvent;
+      console.debug('🔍 messageAddedEvent received:', messageEvent);
+
+      if (messageEvent.message?.content) {
+        const content = messageEvent.message.content;
+        console.debug('📝 messageAddedEvent content:', content);
+
+        // ツール結果を検出して処理
+        if (Array.isArray(content)) {
+          content.forEach((block, index) => {
+            console.debug(`📦 Content block ${index}:`, block);
+
+            if (block.type === 'toolResultBlock' && callbacks.onToolResult) {
+              const toolResult: ToolResult = {
+                toolUseId: block.toolUseId || 'unknown',
+                content: Array.isArray(block.content)
+                  ? block.content.map((c) => c.text || JSON.stringify(c)).join('\n')
+                  : (block.content as string) || JSON.stringify(block),
+                isError: block.status === 'error',
+              };
+              console.debug('✅ ToolResult detected and processed:', toolResult);
+              callbacks.onToolResult(toolResult);
+            }
+          });
+        }
       }
       break;
     }

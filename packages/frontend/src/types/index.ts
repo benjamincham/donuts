@@ -7,8 +7,41 @@ export interface User {
   idToken?: string;
 }
 
+// Tool Use types
+export interface ToolUse {
+  id: string;
+  name: string;
+  input: Record<string, unknown>;
+  status: 'pending' | 'running' | 'completed' | 'error';
+  originalToolUseId?: string; // 実際のAPIから送信されるtoolUseId
+}
+
+// Tool Result types
+export interface ToolResult {
+  toolUseId: string;
+  content: string;
+  isError?: boolean;
+}
+
+// Message Content types
+export interface MessageContent {
+  type: 'text' | 'toolUse' | 'toolResult';
+  text?: string;
+  toolUse?: ToolUse;
+  toolResult?: ToolResult;
+}
+
 // Message types
 export interface Message {
+  id: string;
+  type: 'user' | 'assistant';
+  contents: MessageContent[]; // Changed from single content string to multiple content blocks
+  timestamp: Date;
+  isStreaming?: boolean;
+}
+
+// Legacy support for single content string (backward compatibility)
+export interface LegacyMessage {
   id: string;
   type: 'user' | 'assistant';
   content: string;
@@ -51,6 +84,22 @@ export interface ModelContentBlockStartEvent extends AgentStreamEvent {
   start?: {
     type: string;
     name?: string;
+    input?: Record<string, unknown>;
+    toolUseId?: string;
+  };
+}
+
+export interface MessageAddedEvent extends AgentStreamEvent {
+  type: 'messageAddedEvent';
+  message?: {
+    role?: string;
+    content?: Array<{
+      type: string;
+      toolUseId?: string;
+      content?: string;
+      isError?: boolean;
+      [key: string]: unknown;
+    }>;
   };
 }
 

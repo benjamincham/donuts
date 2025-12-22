@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { nanoid } from 'nanoid';
-import type { ChatState, Message } from '../types/index';
+import type { ChatState, Message, MessageContent, ToolUse, ToolResult } from '../types/index';
 import { streamAgentResponse } from '../api/agent';
 import type { ConversationMessage } from '../api/sessions';
 
@@ -13,6 +13,62 @@ export const setNavigateFunction = (
   navigate: (to: string, options?: { replace?: boolean }) => void
 ) => {
   navigateFunction = navigate;
+};
+
+// ヘルパー関数: 文字列コンテンツをMessageContent配列に変換
+const stringToContents = (text: string): MessageContent[] => {
+  return text ? [{ type: 'text', text }] : [];
+};
+
+// ヘルパー関数: MessageContentを追加
+const addContentToMessage = (
+  contents: MessageContent[],
+  newContent: MessageContent
+): MessageContent[] => {
+  return [...contents, newContent];
+};
+
+// ヘルパー関数: テキストコンテンツを更新または追加
+const updateOrAddTextContent = (contents: MessageContent[], text: string): MessageContent[] => {
+  // contentsが空の場合、新しいテキストブロックを追加
+  if (contents.length === 0) {
+    return [{ type: 'text', text }];
+  }
+
+  const lastContent = contents[contents.length - 1];
+
+  // 最後がテキストブロックの場合のみ更新（ストリーミング継続）
+  if (lastContent.type === 'text') {
+    const updated = [...contents];
+    updated[contents.length - 1] = { type: 'text', text };
+    return updated;
+  }
+
+  // 最後がtoolUseまたはtoolResultの場合は新しいテキストブロックを追加
+  return [...contents, { type: 'text', text }];
+};
+
+// ヘルパー関数: ToolUseのステータスを更新
+const updateToolUseStatus = (
+  contents: MessageContent[],
+  toolUseId: string,
+  status: ToolUse['status']
+): MessageContent[] => {
+  return contents.map((content) => {
+    if (content.type === 'toolUse' && content.toolUse) {
+      // 実際のtoolUseIdまたはローカルIDで一致確認
+      if (content.toolUse.id === toolUseId || content.toolUse.originalToolUseId === toolUseId) {
+        return {
+          ...content,
+          toolUse: {
+            ...content.toolUse,
+            status,
+          },
+        };
+      }
+    }
+    return content;
+  });
 };
 
 interface ChatActions {
@@ -81,26 +137,83 @@ export const useChatStore = create<ChatStore>()(
           // ユーザーメッセージを追加
           addMessage({
             type: 'user',
-            content: prompt,
+            contents: stringToContents(prompt),
           });
 
           // アシスタントの応答メッセージを作成（ストリーミング用）
           const assistantMessageId = addMessage({
             type: 'assistant',
-            content: '',
+            contents: [],
             isStreaming: true,
           });
 
           let accumulatedContent = '';
+          let isAfterToolExecution = false;
 
           // ストリーミングレスポンスを処理
           await streamAgentResponse(prompt, sessionId, {
             onTextDelta: (text: string) => {
-              accumulatedContent += text;
-              updateMessage(assistantMessageId, {
-                content: accumulatedContent,
-                isStreaming: true,
-              });
+              // ツール実行後の最初のテキストの場合、新しいテキストブロック開始
+              if (isAfterToolExecution) {
+                accumulatedContent = text;
+                isAfterToolExecution = false;
+              } else {
+                accumulatedContent += text;
+              }
+
+              const { messages } = get();
+              const currentMessage = messages.find((msg) => msg.id === assistantMessageId);
+              if (currentMessage) {
+                // 既存のcontentsを保持しつつテキストを更新
+                const newContents = updateOrAddTextContent(
+                  currentMessage.contents,
+                  accumulatedContent
+                );
+                updateMessage(assistantMessageId, {
+                  contents: newContents,
+                  isStreaming: true,
+                });
+              }
+            },
+            onToolUse: (toolUse: ToolUse) => {
+              // ツール使用を追加
+              const { messages } = get();
+              const currentMessage = messages.find((msg) => msg.id === assistantMessageId);
+              if (currentMessage) {
+                const newContents = addContentToMessage(currentMessage.contents, {
+                  type: 'toolUse',
+                  toolUse,
+                });
+                updateMessage(assistantMessageId, {
+                  contents: newContents,
+                });
+              }
+            },
+            onToolResult: (toolResult: ToolResult) => {
+              // ツール結果を追加
+              const { messages } = get();
+              const currentMessage = messages.find((msg) => msg.id === assistantMessageId);
+              if (currentMessage) {
+                // ToolUseのステータスを完了に更新
+                const updatedContentsWithStatus = updateToolUseStatus(
+                  currentMessage.contents,
+                  toolResult.toolUseId,
+                  'completed'
+                );
+
+                // ツール結果を追加
+                const finalContents = addContentToMessage(updatedContentsWithStatus, {
+                  type: 'toolResult',
+                  toolResult,
+                });
+
+                updateMessage(assistantMessageId, {
+                  contents: finalContents,
+                });
+
+                // ツール実行後フラグを設定（次のテキストは新しいブロックとして開始）
+                isAfterToolExecution = true;
+              }
             },
             onComplete: () => {
               updateMessage(assistantMessageId, {
@@ -113,7 +226,7 @@ export const useChatStore = create<ChatStore>()(
             onError: (error: Error) => {
               // エラーメッセージで更新
               updateMessage(assistantMessageId, {
-                content: `エラーが発生しました: ${error.message}`,
+                contents: stringToContents(`エラーが発生しました: ${error.message}`),
                 isStreaming: false,
               });
 
@@ -163,7 +276,7 @@ export const useChatStore = create<ChatStore>()(
         const messages: Message[] = conversationMessages.map((convMsg) => ({
           id: convMsg.id,
           type: convMsg.type,
-          content: convMsg.content,
+          contents: stringToContents(convMsg.content), // content文字列をcontents配列に変換
           timestamp: new Date(convMsg.timestamp),
           isStreaming: false, // 履歴データはストリーミング中ではない
         }));

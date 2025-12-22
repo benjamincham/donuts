@@ -108,4 +108,50 @@
   .markdown-content pre {
     @apply my-4 rounded-lg overflow-x-auto;
   }
+
+  /* ツールコンポーネントのシンプルアニメーション */
+  .tool-use-block {
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  .tool-result-block {
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  /* メッセージコンテンツの間隔調整 - コンパクト化 */
+  .message-contents > .tool-use-block:not(:last-child),
+  .message-contents > .tool-result-block:not(:last-child) {
+    @apply mb-1;
+  }
+
+  /* ツールブロック内のテキストコンテンツとの間隔 - コンパクト化 */
+  .message-contents .markdown-content + .tool-use-block,
+  .message-contents .markdown-content + .tool-result-block {
+    @apply mt-2;
+  }
+
+  .message-contents .tool-use-block + .markdown-content,
+  .message-contents .tool-result-block + .markdown-content {
+    @apply mt-2;
+  }
+}
+
+@layer utilities {
+  /* シンプルなフェードインアニメーション */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* モバイル対応 - シンプル化 */
+  @media (max-width: 768px) {
+    .tool-use-block,
+    .tool-result-block {
+      @apply mx-1;
+    }
+  }
 }

@@ -18,12 +18,40 @@ export interface SessionSummary {
 }
 
 /**
+ * ToolUse 型定義（Backend と共通）
+ */
+export interface ToolUse {
+  id: string;
+  name: string;
+  input: Record<string, unknown>;
+  status?: 'pending' | 'running' | 'completed' | 'error';
+  originalToolUseId?: string;
+}
+
+/**
+ * ToolResult 型定義（Backend と共通）
+ */
+export interface ToolResult {
+  toolUseId: string;
+  content: string;
+  isError: boolean;
+}
+
+/**
+ * MessageContent 型定義（Union型）
+ */
+export type MessageContent =
+  | { type: 'text'; text: string }
+  | { type: 'toolUse'; toolUse: ToolUse }
+  | { type: 'toolResult'; toolResult: ToolResult };
+
+/**
  * 会話メッセージの型定義
  */
 export interface ConversationMessage {
   id: string;
   type: 'user' | 'assistant';
-  content: string;
+  contents: MessageContent[];
   timestamp: string;
 }
 

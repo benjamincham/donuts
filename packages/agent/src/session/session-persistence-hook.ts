@@ -31,16 +31,23 @@ export class SessionPersistenceHook implements HookProvider {
   /**
    * Agent 実行完了後のイベントハンドラ
    * 会話履歴をストレージに保存する
+   * リアルタイム保存されていない場合のフォールバック
    */
   private async onAfterInvocation(event: AfterInvocationEvent): Promise<void> {
     try {
       const { actorId, sessionId } = this.sessionConfig;
       const messages = event.agent.messages;
 
-      // 会話履歴をストレージに保存
+      logger.debug(
+        `🔍 AfterInvocation: Agent messages=${messages.length}, checking for unsaved messages`
+      );
+
+      // 会話履歴をストレージに保存（既に保存済みの場合は重複を避ける）
       await this.storage.saveMessages(this.sessionConfig, messages);
 
-      logger.debug(`💾 セッション履歴を自動保存: ${actorId}/${sessionId} (${messages.length}件)`);
+      logger.debug(
+        `💾 セッション履歴を自動保存完了 (フォールバック): ${actorId}/${sessionId} (${messages.length}件)`
+      );
     } catch (error) {
       // エラーが発生しても Agent の実行を止めないように警告レベルでログ
       logger.warn(

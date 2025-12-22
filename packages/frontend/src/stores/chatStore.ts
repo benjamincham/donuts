@@ -276,7 +276,7 @@ export const useChatStore = create<ChatStore>()(
         const messages: Message[] = conversationMessages.map((convMsg) => ({
           id: convMsg.id,
           type: convMsg.type,
-          contents: stringToContents(convMsg.content), // content文字列をcontents配列に変換
+          contents: convMsg.contents, // contents配列をそのまま使用
           timestamp: new Date(convMsg.timestamp),
           isStreaming: false, // 履歴データはストリーミング中ではない
         }));

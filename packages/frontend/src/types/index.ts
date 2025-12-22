@@ -12,8 +12,8 @@ export interface ToolUse {
   id: string;
   name: string;
   input: Record<string, unknown>;
-  status: 'pending' | 'running' | 'completed' | 'error';
-  originalToolUseId?: string; // 実際のAPIから送信されるtoolUseId
+  status?: 'pending' | 'running' | 'completed' | 'error';
+  originalToolUseId?: string;
 }
 
 // Tool Result types

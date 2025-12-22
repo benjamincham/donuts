@@ -191,6 +191,25 @@ export class AgentCoreMemoryStorage implements SessionStorage {
   }
 
   /**
+   * 指定されたセッションに単一のメッセージを追加保存する
+   * ストリーミング中のリアルタイム保存用
+   * @param config セッション設定
+   * @param message 追加するメッセージ
+   */
+  async appendMessage(config: SessionConfig, message: Message): Promise<void> {
+    try {
+      console.log(
+        `[AgentCoreMemoryStorage] Appending message for session: ${config.sessionId}, role: ${message.role}`
+      );
+
+      await this.createMessageEvent(config, message);
+    } catch (error) {
+      console.error(`[AgentCoreMemoryStorage] Error appending message:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * 指定されたイベントを削除
    * @param config セッション設定
    * @param eventId 削除するイベントID

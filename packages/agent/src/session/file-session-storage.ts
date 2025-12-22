@@ -82,22 +82,45 @@ export class FileSessionStorage implements SessionStorage {
 
   /**
    * 指定されたセッションの履歴をクリアする
+   * @param config セッション設定
    */
   async clearSession(config: SessionConfig): Promise<void> {
-    const filePath = this.getFilePath(config);
-
+    const sessionPath = this.getFilePath(config);
     try {
-      await fs.unlink(filePath);
-      logger.debug(`🗑️  セッション履歴をクリア: ${config.actorId}/${config.sessionId}`);
+      await fs.unlink(sessionPath);
+      console.log(`[FileSessionStorage] Session cleared: ${sessionPath}`);
     } catch (error) {
+      // ファイルが存在しない場合は無視
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        logger.error(
-          `❌ セッション履歴のクリアエラー: ${config.actorId}/${config.sessionId}`,
-          error
-        );
+        console.error(`[FileSessionStorage] Error clearing session:`, error);
         throw error;
       }
-      // ファイルが存在しない場合は何もしない
+    }
+  }
+
+  /**
+   * 指定されたセッションに単一のメッセージを追加保存する
+   * ストリーミング中のリアルタイム保存用
+   * @param config セッション設定
+   * @param message 追加するメッセージ
+   */
+  async appendMessage(config: SessionConfig, message: Message): Promise<void> {
+    try {
+      console.log(
+        `[FileSessionStorage] Appending message for session: ${config.sessionId}, role: ${message.role}`
+      );
+
+      // 既存のメッセージを読み込み
+      const existingMessages = await this.loadMessages(config);
+
+      // 新しいメッセージを追加
+      const updatedMessages = [...existingMessages, message];
+
+      // 更新されたメッセージを保存
+      await this.saveMessages(config, updatedMessages);
+    } catch (error) {
+      console.error(`[FileSessionStorage] Error appending message:`, error);
+      throw error;
     }
   }
 

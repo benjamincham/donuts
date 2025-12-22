@@ -15,6 +15,11 @@ interface MessageProps {
 export const Message: React.FC<MessageProps> = ({ message }) => {
   const isUser = message.type === 'user';
 
+  // toolUse/toolResult を含むメッセージかどうか判定
+  const hasToolContent = message.contents.some(
+    (content) => content.type === 'toolUse' || content.type === 'toolResult'
+  );
+
   // Markdownカスタムコンポーネント
 
   const markdownComponents = {
@@ -74,14 +79,22 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
   };
 
   return (
-    <div className={`flex mb-6 ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div
+      className={`flex mb-6 ${hasToolContent ? 'justify-start' : isUser ? 'justify-end' : 'justify-start'}`}
+    >
       <div
-        className={`flex flex-row items-start w-full ${isUser ? 'max-w-3xl ml-auto' : 'max-w-4xl'}`}
+        className={`flex flex-row items-start w-full ${
+          hasToolContent ? 'max-w-full' : isUser ? 'max-w-3xl ml-auto' : 'max-w-4xl'
+        }`}
       >
         {/* メッセージバブル */}
         <div
           className={`relative ${
-            isUser ? 'message-bubble message-user' : 'message-bubble message-assistant'
+            hasToolContent
+              ? 'w-full'
+              : isUser
+                ? 'message-bubble message-user'
+                : 'message-bubble message-assistant'
           } ${message.isStreaming ? 'bg-opacity-90' : ''}`}
         >
           {/* メッセージ内容 */}

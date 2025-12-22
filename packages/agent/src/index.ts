@@ -254,6 +254,19 @@ app.post('/invocations', async (req: Request, res: Response) => {
 
       // ストリーミングイベントを NDJSON として送信
       for await (const event of agent.stream(prompt)) {
+        // messageAddedEvent の場合はリアルタイムで保存
+        if (event.type === 'messageAddedEvent' && event.message) {
+          try {
+            await sessionStorage.appendMessage(sessionConfig, event.message);
+            console.log(
+              `💾 メッセージをリアルタイム保存: role=${event.message.role}, content blocks=${event.message.content.length}`
+            );
+          } catch (saveError) {
+            console.error(`⚠️ メッセージ保存に失敗 (ストリーミング継続):`, saveError);
+            // 保存エラーでもストリーミングは継続する
+          }
+        }
+
         // 循環参照を回避してイベントをシリアライズ
         const safeEvent = serializeStreamEvent(event);
         res.write(`${JSON.stringify(safeEvent)}\n`);

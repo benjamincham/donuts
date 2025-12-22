@@ -36,4 +36,15 @@ export interface SessionStorage {
    * @param config セッション設定
    */
   clearSession(config: SessionConfig): Promise<void>;
+
+  /**
+   * 指定されたセッションに単一のメッセージを追加保存する
+   * ストリーミング中のリアルタイム保存用
+   * @param config セッション設定
+   * @param message 追加するメッセージ
+   */
+  appendMessage(
+    config: SessionConfig,
+    message: import('@strands-agents/sdk').Message
+  ): Promise<void>;
 }

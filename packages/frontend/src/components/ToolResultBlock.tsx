@@ -62,11 +62,15 @@ export const ToolResultBlock: React.FC<ToolResultBlockProps> = ({ toolResult }) 
   })();
 
   return (
-    <div className="tool-result-block my-1">
+    <div className="tool-result-block my-1 w-full">
       {/* 白背景・グレー枠線のメインコンテナ */}
       <div className="bg-white border border-gray-300 rounded-lg text-sm hover:shadow-sm transition-shadow">
-        {/* ヘッダー部分 */}
-        <div className="flex items-center gap-2 px-3 py-1.5">
+        {/* ヘッダー部分（全体クリック可能） */}
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center gap-2 px-3 py-1.5 w-full text-left hover:bg-gray-50 transition-colors"
+          aria-label={isExpanded ? '結果を隠す' : '結果を表示'}
+        >
           {/* アイコンとステータス */}
           <div className={`flex items-center ${resultStyles.statusColor}`}>{resultStyles.icon}</div>
 
@@ -74,11 +78,7 @@ export const ToolResultBlock: React.FC<ToolResultBlockProps> = ({ toolResult }) 
           <span className="font-medium text-gray-900 text-xs">{resultStyles.label}</span>
 
           {/* 展開ボタン */}
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="text-gray-400 hover:text-gray-600 transition-colors ml-auto"
-            aria-label={isExpanded ? '結果を隠す' : '結果を表示'}
-          >
+          <div className="text-gray-400 ml-auto">
             <svg
               className={`w-3 h-3 transform transition-transform duration-200 ${
                 isExpanded ? 'rotate-180' : ''
@@ -94,8 +94,8 @@ export const ToolResultBlock: React.FC<ToolResultBlockProps> = ({ toolResult }) 
                 d="M19 9l-7 7-7-7"
               />
             </svg>
-          </button>
-        </div>
+          </div>
+        </button>
 
         {/* 詳細コンテンツ（展開時、枠内に統合） */}
         {isExpanded && (

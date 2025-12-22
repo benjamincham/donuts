@@ -3,9 +3,9 @@
  * セッション一覧の表示と管理を行う
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Donut, SquarePen, Search, PanelRight, Wrench } from 'lucide-react';
+import { Donut, SquarePen, Search, PanelRight, Wrench, User, LogOut } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useSessionStore } from '../stores/sessionStore';
 import { useUIStore } from '../stores/uiStore';
@@ -59,7 +59,7 @@ export function SessionSidebar() {
   const navigate = useNavigate();
   const { sessionId } = useParams<{ sessionId?: string }>();
 
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const {
     sessions,
     isLoadingSessions,
@@ -71,6 +71,10 @@ export function SessionSidebar() {
     clearActiveSession,
   } = useSessionStore();
   const { isSidebarOpen, toggleSidebar } = useUIStore();
+
+  // ユーザードロップダウンの状態管理
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const userDropdownRef = useRef<HTMLDivElement>(null);
 
   // 初回読み込み
   useEffect(() => {
@@ -126,6 +130,34 @@ export function SessionSidebar() {
   const handleToggleSidebar = () => {
     toggleSidebar();
   };
+
+  // ログアウト処理
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  // ユーザードロップダウンの切り替え
+  const toggleUserDropdown = () => {
+    setIsUserDropdownOpen(!isUserDropdownOpen);
+  };
+
+  // ドロップダウン外クリックで閉じる
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
+        setIsUserDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   if (!user) {
     return null;
@@ -267,6 +299,62 @@ export function SessionSidebar() {
           )}
         </div>
       )}
+
+      {/* ユーザー情報 - サイドバーの一番下 */}
+      <div
+        className={`mt-auto p-4 border-t border-gray-200 ${!isSidebarOpen ? 'flex justify-center' : ''}`}
+      >
+        <div className="relative" ref={userDropdownRef}>
+          <button
+            onClick={toggleUserDropdown}
+            className={`flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors ${
+              isSidebarOpen ? 'w-full text-left' : 'w-auto'
+            }`}
+            title={!isSidebarOpen ? 'ユーザーメニュー' : undefined}
+          >
+            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+              <User className="w-4 h-4 text-gray-600" />
+            </div>
+            {isSidebarOpen && (
+              <span className="text-sm font-medium text-gray-900 truncate">{user.username}</span>
+            )}
+          </button>
+
+          {/* ドロップダウンメニュー */}
+          {isUserDropdownOpen && (
+            <div
+              className={`absolute bg-white rounded-2xl shadow-lg border border-gray-200 py-2 z-10 ${
+                isSidebarOpen ? 'bottom-full left-0 right-0 mb-2' : 'bottom-full left-0 mb-2 w-48'
+              }`}
+            >
+              {/* ユーザー情報 - 展開時のみ表示 */}
+              {isSidebarOpen && (
+                <div className="px-4 py-2 border-b border-gray-100">
+                  <p className="text-sm font-medium text-gray-900">{user.username}</p>
+                  <p className="text-xs text-gray-500">認証済み</p>
+                </div>
+              )}
+
+              {/* 折りたたみ時はユーザー名も表示 */}
+              {!isSidebarOpen && (
+                <div className="px-4 py-2 border-b border-gray-100">
+                  <p className="text-sm font-medium text-gray-900">{user.username}</p>
+                  <p className="text-xs text-gray-500">認証済み</p>
+                </div>
+              )}
+
+              {/* ログアウト */}
+              <button
+                onClick={handleLogout}
+                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                ログアウト
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

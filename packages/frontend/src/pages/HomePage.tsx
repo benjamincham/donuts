@@ -50,7 +50,7 @@ export function HomePage() {
       {/* フッター */}
       <footer className="p-6 text-center">
         <p className="text-sm text-gray-500">
-          © 2024 Donuts AI Assistant. Made with ❤️ and a lot of coffee.
+          © 2025 Donuts AI Assistant. Made with ❤️ and a lot of coffee.
         </p>
       </footer>
     </>

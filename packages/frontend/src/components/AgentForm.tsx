@@ -1,18 +1,10 @@
 import React, { useState } from 'react';
 import { Plus, X, Save, AlertCircle, Sparkles } from 'lucide-react';
-import { customAlphabet } from 'nanoid';
 import { ToolSelector } from './ToolSelector';
 import type { CreateAgentInput, Agent, Scenario } from '../types/agent';
 import { streamAgentResponse, createAgentConfigGenerationPrompt } from '../api/agent';
 import { useToolStore } from '../stores/toolStore';
 import { parseStreamingXml, createInitialXmlState, type XmlParseState } from '../utils/xmlParser';
-
-// AWS AgentCore sessionId制約: [a-zA-Z0-9][a-zA-Z0-9-_]*
-// 英数字のみのカスタムnanoid（ハイフンとアンダースコアを除外）
-const generateSessionId = customAlphabet(
-  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
-  33
-);
 
 interface AgentFormProps {
   agent?: Agent;
@@ -179,14 +171,11 @@ export const AgentForm: React.FC<AgentFormProps> = ({
       availableTools
     );
 
-    // 一意のセッションID生成（33文字）
-    const sessionId = generateSessionId();
-
     try {
       let currentParseState = initialParseState;
       let accumulatedXml = '';
 
-      await streamAgentResponse(generationPrompt, sessionId, {
+      await streamAgentResponse(generationPrompt, undefined, {
         onTextDelta: (text: string) => {
           accumulatedXml += text;
           setXmlBuffer(accumulatedXml);

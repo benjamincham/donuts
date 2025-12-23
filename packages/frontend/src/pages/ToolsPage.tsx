@@ -4,20 +4,11 @@
  */
 
 import { useState, useEffect } from 'react';
-import {
-  Wrench,
-  Search,
-  Loader2,
-  AlertCircle,
-  XCircle,
-  Settings,
-  Zap,
-  Code,
-  RefreshCw,
-} from 'lucide-react';
+import { Wrench, Search, Loader2, AlertCircle, XCircle, RefreshCw } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useToolStore } from '../stores/toolStore';
 import { LoadingIndicator } from '../components/ui/LoadingIndicator';
+import { getToolIcon } from '../utils/toolIcons';
 import type { MCPTool } from '../api/tools';
 
 /**
@@ -29,15 +20,6 @@ interface ToolItemProps {
 
 function ToolItem({ tool }: ToolItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-
-  // ツール名に基づいたアイコンを選択
-  const getToolIcon = (toolName: string) => {
-    if (toolName.includes('search')) return <Search className="w-4 h-4" />;
-    if (toolName.includes('echo') || toolName.includes('ping')) return <Zap className="w-4 h-4" />;
-    if (toolName.includes('code') || toolName.includes('script'))
-      return <Code className="w-4 h-4" />;
-    return <Settings className="w-4 h-4" />;
-  };
 
   // パラメータの表示
   const renderParameters = () => {

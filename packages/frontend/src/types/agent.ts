@@ -211,7 +211,7 @@ export const DEFAULT_AGENTS: CreateAgentInput[] = [
 - Actively use the tavilySearch tool for web searches
 - Use the fetchWebsite tool for detailed website analysis
 - If you need to execute commands, ask the user's permission beforehand`,
-    enabledTools: ['tavily_search'],
+    enabledTools: ['tavily_search', 'tavily_extract', 'tavily_crawl'],
     scenarios: [
       {
         title: '市場・業界調査',

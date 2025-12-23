@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useChatStore } from '../stores/chatStore';
 import { useSelectedAgent } from '../stores/agentStore';
@@ -16,14 +16,28 @@ export const MessageList: React.FC<MessageListProps> = ({ onScenarioClick }) => 
   const { isLoadingEvents } = useSessionStore();
   const selectedAgent = useSelectedAgent();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
 
-  // 新しいメッセージが追加されたときに自動スクロール
+  // スクロール位置を監視し、ユーザーが上方向にスクロールしたら自動スクロールを停止
+  const handleScroll = () => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // スクロール位置が最下部から100px以内なら自動スクロールを有効化
+    const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+    setShouldAutoScroll(isAtBottom);
+  };
+
+  // 新しいメッセージが追加されたときに自動スクロール（自動スクロールが有効な場合のみ）
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (shouldAutoScroll) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, shouldAutoScroll]);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-white">
+    <div ref={containerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto bg-white">
       <div className="max-w-4xl mx-auto p-4">
         {/* エラー表示 */}
         {error && (

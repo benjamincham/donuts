@@ -44,7 +44,7 @@ interface AgentConfig {
  */
 export const streamAgentResponse = async (
   prompt: string,
-  sessionId: string,
+  sessionId: string | undefined,
   callbacks: StreamingCallbacks,
   agentConfig?: AgentConfig
 ): Promise<void> => {
@@ -72,8 +72,10 @@ export const streamAgentResponse = async (
     Authorization: `Bearer ${accessToken}`,
   };
 
-  // セッションIDを常に付与
-  headers['X-Amzn-Bedrock-AgentCore-Runtime-Session-Id'] = sessionId;
+  // セッションIDが指定されている場合のみ付与
+  if (sessionId) {
+    headers['X-Amzn-Bedrock-AgentCore-Runtime-Session-Id'] = sessionId;
+  }
 
   // リクエストボディを構築（agentConfigが指定されている場合は含める）
   const requestBody: Record<string, unknown> = { prompt };

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Check, X, AlertCircle } from 'lucide-react';
+import { Search, X, AlertCircle } from 'lucide-react';
 import { useToolStore } from '../stores/toolStore';
 import { LoadingIndicator } from './ui/LoadingIndicator';
+import { getToolIcon } from '../utils/toolIcons';
 
 interface ToolSelectorProps {
   selectedTools: string[];
@@ -145,17 +146,18 @@ export const ToolSelector: React.FC<ToolSelectorProps> = ({
                     disabled ? 'cursor-not-allowed opacity-50' : ''
                   }`}
                 >
-                  <div className="flex-shrink-0 mt-0.5">
-                    <div
-                      className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${
-                        isSelected
-                          ? 'bg-blue-600 border-blue-600 text-white'
-                          : 'border-gray-300 hover:border-blue-500'
-                      }`}
-                    >
-                      {isSelected && <Check className="w-3 h-3" />}
-                    </div>
+                  {/* ツールアイコン（選択状態で枠色変更） */}
+                  <div
+                    className={`flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-200 ${
+                      isSelected
+                        ? 'bg-blue-600 text-white border-1 border-blue-500 shadow-sm'
+                        : 'bg-gray-100 text-gray-600 border border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                    }`}
+                  >
+                    {getToolIcon(tool.name, 'w-3 h-3')}
                   </div>
+
+                  {/* ツール情報 */}
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-gray-900">{tool.name}</div>
                     {tool.description && (

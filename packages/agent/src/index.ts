@@ -232,15 +232,10 @@ app.post('/invocations', async (req: Request, res: Response) => {
       });
     }
 
-    // セッションID をヘッダーから取得
-    const sessionId = req.headers['x-amzn-bedrock-agentcore-runtime-session-id'] as string;
-
-    if (!sessionId) {
-      return res.status(400).json({
-        error: 'Missing session ID',
-        message: 'X-Amzn-Bedrock-AgentCore-Runtime-Session-Id header is required',
-      });
-    }
+    // セッションID をヘッダーから取得（オプショナル）
+    const sessionId = req.headers['x-amzn-bedrock-agentcore-runtime-session-id'] as
+      | string
+      | undefined;
 
     // RequestContext から userId を取得
     const contextMeta = getContextMetadata();
@@ -248,21 +243,27 @@ app.post('/invocations', async (req: Request, res: Response) => {
 
     console.log(`📝 Received prompt (${contextMeta.requestId}): ${prompt}`);
     console.log(`👤 Actor ID (from JWT): ${actorId}`);
-    console.log(`🔗 Session ID: ${sessionId}`);
+    if (sessionId) {
+      console.log(`🔗 Session ID: ${sessionId}`);
+    } else {
+      console.log(`🔗 Session ID: なし（セッションなしモード）`);
+    }
 
-    // セッション設定
-    const sessionConfig: SessionConfig = { actorId, sessionId };
+    // セッション設定とフック（sessionIdがある場合のみ）
+    let sessionConfig: SessionConfig | undefined;
+    let sessionHook: SessionPersistenceHook | undefined;
 
-    // セッション永続化フックを作成
-    const sessionHook = new SessionPersistenceHook(sessionStorage, sessionConfig);
+    if (sessionId) {
+      sessionConfig = { actorId, sessionId };
+      sessionHook = new SessionPersistenceHook(sessionStorage, sessionConfig);
+    }
 
-    // Agent作成オプション（セッション情報を含む）
+    // Agent作成オプション
     const agentOptions = {
       modelId,
       enabledTools,
       systemPrompt,
-      sessionStorage,
-      sessionConfig,
+      ...(sessionId && { sessionStorage, sessionConfig }),
     };
 
     // ログ出力（デバッグ用）
@@ -270,8 +271,9 @@ app.post('/invocations', async (req: Request, res: Response) => {
     if (enabledTools) console.log(`🔧 指定ツール: ${enabledTools.join(', ')}`);
     if (systemPrompt) console.log(`📝 カスタムシステムプロンプト使用`);
 
-    // セッション用の Agent を作成（並列処理により高速化）
-    const agent = await createAgent([sessionHook], agentOptions);
+    // Agent を作成（セッションフックは条件付き）
+    const hooks = sessionHook ? [sessionHook] : [];
+    const agent = await createAgent(hooks, agentOptions);
 
     // ストリーミングレスポンス用のヘッダー設定
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
@@ -284,8 +286,8 @@ app.post('/invocations', async (req: Request, res: Response) => {
 
       // ストリーミングイベントを NDJSON として送信
       for await (const event of agent.stream(prompt)) {
-        // messageAddedEvent の場合はリアルタイムで保存
-        if (event.type === 'messageAddedEvent' && event.message) {
+        // messageAddedEvent の場合はリアルタイムで保存（sessionIdがある場合のみ）
+        if (event.type === 'messageAddedEvent' && event.message && sessionConfig) {
           try {
             await sessionStorage.appendMessage(sessionConfig, event.message);
             console.log(

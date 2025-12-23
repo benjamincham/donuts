@@ -116,6 +116,156 @@ export const LOCAL_TOOLS: MCPTool[] = [
       required: ['query'],
     },
   },
+  {
+    name: 'tavily_extract',
+    description:
+      'Tavily APIを使用して指定されたURLからコンテンツを抽出します。Webページの内容を構造化されたテキストとして取得できます。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        urls: {
+          oneOf: [
+            { type: 'string' },
+            {
+              type: 'array',
+              items: { type: 'string' },
+            },
+          ],
+          description: '抽出対象のURL（単一URLまたはURL配列）',
+        },
+        query: {
+          type: 'string',
+          description: 'リランキング用クエリ。指定すると関連性の高いコンテンツが優先されます',
+        },
+        extractDepth: {
+          type: 'string',
+          enum: ['basic', 'advanced'],
+          default: 'basic',
+          description: '抽出深度。basicは1クレジット/5URL、advancedは2クレジット/5URL',
+        },
+        format: {
+          type: 'string',
+          enum: ['markdown', 'text'],
+          default: 'markdown',
+          description: '出力フォーマット。markdownまたはtext',
+        },
+        chunksPerSource: {
+          type: 'number',
+          minimum: 1,
+          maximum: 5,
+          default: 3,
+          description: 'ソースあたりのチャンク数（1-5、queryが指定された場合のみ有効）',
+        },
+        includeImages: {
+          type: 'boolean',
+          default: false,
+          description: '画像情報を含めるかどうか',
+        },
+        timeout: {
+          type: 'number',
+          minimum: 1,
+          maximum: 60,
+          default: 30,
+          description: 'タイムアウト（秒、1-60）',
+        },
+      },
+      required: ['urls'],
+    },
+  },
+  {
+    name: 'tavily_crawl',
+    description:
+      'Tavily APIを使用してWebサイトを包括的にクロールします。指定されたルートURLから始まり、関連するページを自動的に発見・抽出します。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: {
+          type: 'string',
+          description: 'クロール開始URL',
+        },
+        instructions: {
+          type: 'string',
+          description: 'クロールの指示（自然言語）。指定すると使用コストが2倍になります',
+        },
+        maxDepth: {
+          type: 'number',
+          minimum: 1,
+          maximum: 5,
+          default: 1,
+          description: '最大探索深度（1-5、ベースURLからどこまで離れるか）',
+        },
+        maxBreadth: {
+          type: 'number',
+          minimum: 1,
+          default: 20,
+          description: 'ページごとの最大リンク数（1以上）',
+        },
+        limit: {
+          type: 'number',
+          minimum: 1,
+          default: 50,
+          description: '処理する最大リンク数（1以上）',
+        },
+        selectPaths: {
+          type: 'array',
+          items: { type: 'string' },
+          description: '含めるパスの正規表現パターン（例: ["/docs/.*", "/api/v1.*"]）',
+        },
+        selectDomains: {
+          type: 'array',
+          items: { type: 'string' },
+          description: '含めるドメインの正規表現パターン（例: ["^docs\\.example\\.com$"]）',
+        },
+        excludePaths: {
+          type: 'array',
+          items: { type: 'string' },
+          description: '除外するパスの正規表現パターン（例: ["/private/.*", "/admin/.*"]）',
+        },
+        excludeDomains: {
+          type: 'array',
+          items: { type: 'string' },
+          description: '除外するドメインの正規表現パターン（例: ["^private\\.example\\.com$"]）',
+        },
+        allowExternal: {
+          type: 'boolean',
+          default: true,
+          description: '外部ドメインリンクを結果に含めるかどうか',
+        },
+        extractDepth: {
+          type: 'string',
+          enum: ['basic', 'advanced'],
+          default: 'basic',
+          description: '抽出深度。basicは1クレジット/5抽出、advancedは2クレジット/5抽出',
+        },
+        format: {
+          type: 'string',
+          enum: ['markdown', 'text'],
+          default: 'markdown',
+          description: '出力フォーマット。markdownまたはtext',
+        },
+        includeImages: {
+          type: 'boolean',
+          default: false,
+          description: '画像情報を含めるかどうか',
+        },
+        chunksPerSource: {
+          type: 'number',
+          minimum: 1,
+          maximum: 5,
+          default: 3,
+          description: 'ソースあたりのチャンク数（1-5、instructionsが指定された場合のみ有効）',
+        },
+        timeout: {
+          type: 'number',
+          minimum: 10,
+          maximum: 150,
+          default: 150,
+          description: 'タイムアウト（秒、10-150）',
+        },
+      },
+      required: ['url'],
+    },
+  },
 ];
 
 /**

@@ -91,7 +91,7 @@ export function SessionSidebar() {
   useEffect(() => {
     if (user && !hasLoadedOnce && !isLoadingSessions) {
       console.log('🔄 初回セッション読み込み開始');
-      loadSessions(user);
+      loadSessions();
     }
   }, [user, hasLoadedOnce, isLoadingSessions, loadSessions]);
 
@@ -102,7 +102,7 @@ export function SessionSidebar() {
       const existingSession = sessions.find((s) => s.sessionId === sessionId);
       if (existingSession) {
         console.log(`🔄 URL からセッション選択（既存）: ${sessionId}`);
-        selectSession(user, sessionId);
+        selectSession(sessionId);
       } else {
         // 新規作成されたセッションの場合、activeSessionIdのみ更新（events API呼び出しを回避）
         console.log(`🆕 新規セッション検出（履歴取得スキップ）: ${sessionId}`);

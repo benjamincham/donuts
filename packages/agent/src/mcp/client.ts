@@ -70,6 +70,157 @@ export class MCPClientError extends Error {
 }
 
 /**
+ * リトライ設定
+ */
+interface RetryConfig {
+  maxRetries: number;
+  baseDelay: number;
+  maxDelay: number;
+  timeout: number;
+}
+
+/**
+ * デフォルトのリトライ設定
+ */
+const DEFAULT_RETRY_CONFIG: RetryConfig = {
+  maxRetries: 3,
+  baseDelay: 100,
+  maxDelay: 2000,
+  timeout: 30000,
+};
+
+/**
+ * エラーのcauseプロパティを持つ型
+ */
+interface ErrorWithCause extends Error {
+  cause?: {
+    code?: string;
+  };
+}
+
+/**
+ * リトライ可能なエラーかどうかを判定
+ */
+function isRetryableError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const message = error.message.toLowerCase();
+  const cause = (error as ErrorWithCause).cause;
+
+  // Node.js のネットワークエラーコード
+  const retryableCodes = [
+    'econnreset', // 接続リセット
+    'etimedout', // タイムアウト
+    'econnrefused', // 接続拒否
+    'epipe', // パイプ破損
+    'eai_again', // DNS一時エラー
+    'enotfound', // DNS解決エラー
+  ];
+
+  // エラーメッセージに含まれる文字列チェック
+  const retryableMessages = [
+    'fetch failed',
+    'network error',
+    'connection reset',
+    'connection refused',
+    'timeout',
+  ];
+
+  // エラーコードの確認
+  if (cause?.code) {
+    const code = String(cause.code).toLowerCase();
+    if (retryableCodes.includes(code)) {
+      return true;
+    }
+  }
+
+  // エラーメッセージの確認
+  if (retryableMessages.some((msg) => message.includes(msg))) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * 指数バックオフでの待機
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * リトライロジック付きfetch
+ */
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  retryConfig: Partial<RetryConfig> = {}
+): Promise<Response> {
+  const config = { ...DEFAULT_RETRY_CONFIG, ...retryConfig };
+  let lastError: Error = new Error('Unknown error');
+
+  for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
+    try {
+      // タイムアウト設定
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), config.timeout);
+
+      const fetchOptions: RequestInit = {
+        ...options,
+        signal: controller.signal,
+      };
+
+      try {
+        const response = await fetch(url, fetchOptions);
+        clearTimeout(timeoutId);
+
+        // HTTP 5xx エラーもリトライ対象
+        if (response.status >= 500 && response.status < 600 && attempt < config.maxRetries) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        return response;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        throw error;
+      }
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      // 最後のリトライの場合はエラーを投げる
+      if (attempt >= config.maxRetries) {
+        break;
+      }
+
+      // リトライ可能なエラーかチェック
+      if (!isRetryableError(error)) {
+        logger.debug(`リトライ不可能なエラー (attempt ${attempt + 1}):`, lastError.message);
+        throw lastError;
+      }
+
+      // 待機時間を計算（指数バックオフ）
+      const delay = Math.min(config.baseDelay * Math.pow(2, attempt), config.maxDelay);
+
+      logger.debug(
+        `リトライ可能なエラー (attempt ${attempt + 1}/${config.maxRetries + 1}): ${lastError.message}, ${delay}ms後にリトライ`
+      );
+
+      if (delay > 0) {
+        await sleep(delay);
+      }
+    }
+  }
+
+  throw new MCPClientError(
+    `${config.maxRetries + 1}回のリトライ後に失敗: ${lastError.message}`,
+    lastError
+  );
+}
+
+/**
  * AgentCore Gateway MCP クライアント (HTTP ベース)
  */
 export class AgentCoreMCPClient {
@@ -142,7 +293,7 @@ export class AgentCoreMCPClient {
 
         const params = cursor ? { cursor } : {};
 
-        const response = await fetch(this.endpointUrl, {
+        const response = await fetchWithRetry(this.endpointUrl, {
           method: 'POST',
           headers,
           body: JSON.stringify({
@@ -209,7 +360,7 @@ export class AgentCoreMCPClient {
         headers.Authorization = authHeader;
       }
 
-      const response = await fetch(this.endpointUrl, {
+      const response = await fetchWithRetry(this.endpointUrl, {
         method: 'POST',
         headers,
         body: JSON.stringify({

@@ -11,6 +11,16 @@ import { logger } from '../config/index.js';
 const execAsync = promisify(exec);
 
 /**
+ * exec実行時のエラー型定義
+ */
+interface ExecError extends Error {
+  code?: number;
+  signal?: string;
+  stdout?: string;
+  stderr?: string;
+}
+
+/**
  * 危険なコマンドのブラックリスト
  */
 const DANGEROUS_COMMANDS = [
@@ -139,35 +149,40 @@ ${stderr ? `標準エラー:\n${stderr}` : ''}`.trim();
 
       logger.info(`✅ コマンド実行成功: ${command} (${duration}ms)`);
       return output;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // エラーハンドリング
+      const execError = error as ExecError;
       let errorOutput = `実行エラー:
 コマンド: ${command}
 作業ディレクトリ: ${workingDirectory || '(現在のディレクトリ)'}
 `;
 
-      if (error.code !== undefined) {
-        errorOutput += `終了コード: ${error.code}\n`;
+      if (execError.code !== undefined) {
+        errorOutput += `終了コード: ${execError.code}\n`;
       }
 
-      if (error.signal) {
-        errorOutput += `シグナル: ${error.signal}\n`;
+      if (execError.signal) {
+        errorOutput += `シグナル: ${execError.signal}\n`;
       }
 
-      if (error.stdout) {
-        errorOutput += `\n標準出力:\n${truncateOutput(error.stdout)}`;
+      if (execError.stdout) {
+        errorOutput += `\n標準出力:\n${truncateOutput(execError.stdout)}`;
       }
 
-      if (error.stderr) {
-        errorOutput += `\n標準エラー:\n${truncateOutput(error.stderr)}`;
+      if (execError.stderr) {
+        errorOutput += `\n標準エラー:\n${truncateOutput(execError.stderr)}`;
       }
 
       // タイムアウトエラーの特別処理
-      if (error.signal === 'SIGTERM' || error.code === 'ETIMEDOUT') {
+      const isTimeout =
+        execError.signal === 'SIGTERM' ||
+        execError.message?.includes('timeout') ||
+        execError.message?.includes('ETIMEDOUT');
+      if (isTimeout) {
         errorOutput += `\n⏰ タイムアウト: ${timeout}ms で実行が中断されました`;
       }
 
-      logger.error(`❌ コマンド実行エラー: ${command}`, error.message);
+      logger.error(`❌ コマンド実行エラー: ${command}`, execError.message || 'Unknown error');
       return errorOutput;
     }
   },

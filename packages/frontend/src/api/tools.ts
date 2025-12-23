@@ -19,6 +19,39 @@ export interface MCPTool {
 }
 
 /**
+ * ローカルツール定義（エージェント内蔵ツール）
+ * AgentCore Gateway ではなく、エージェント内で直接実装されているツール
+ */
+export const LOCAL_TOOLS: MCPTool[] = [
+  {
+    name: 'execute_command',
+    description:
+      'シェルコマンドを実行し、結果を返します。ファイル操作、情報収集、開発タスクの自動化に使用できます。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        command: {
+          type: 'string',
+          description: '実行するシェルコマンド',
+        },
+        workingDirectory: {
+          type: 'string',
+          description: '作業ディレクトリ（未指定の場合は現在のディレクトリ）',
+        },
+        timeout: {
+          type: 'number',
+          minimum: 1000,
+          maximum: 60000,
+          default: 30000,
+          description: 'タイムアウト（ミリ秒、デフォルト: 30秒、最大: 60秒）',
+        },
+      },
+      required: ['command'],
+    },
+  },
+];
+
+/**
  * API レスポンスの型定義
  */
 interface ToolsResponse {

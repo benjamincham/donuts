@@ -6,7 +6,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { MCPTool } from '../api/tools';
-import { fetchTools, searchTools, checkGatewayHealth } from '../api/tools';
+import { fetchTools, searchTools, checkGatewayHealth, LOCAL_TOOLS } from '../api/tools';
 
 /**
  * ツールストアの状態型定義
@@ -85,8 +85,11 @@ export const useToolStore = create<ToolStoreState>()(
 
           const result = await fetchTools();
 
+          // ローカルツール + MCPツールを結合
+          const allTools = [...LOCAL_TOOLS, ...result.tools];
+
           set({
-            tools: result.tools,
+            tools: allTools,
             nextCursor: result.nextCursor || null,
             isLoading: false,
             error: null,
@@ -96,7 +99,7 @@ export const useToolStore = create<ToolStoreState>()(
           });
 
           console.log(
-            `✅ ツール一覧読み込み完了: ${result.tools.length}件`,
+            `✅ ツール一覧読み込み完了: ${allTools.length}件 (ローカル: ${LOCAL_TOOLS.length}件, MCP: ${result.tools.length}件)`,
             result.nextCursor ? { nextCursor: 'あり' } : { nextCursor: 'なし' }
           );
         } catch (error) {
@@ -189,20 +192,23 @@ export const useToolStore = create<ToolStoreState>()(
         try {
           console.log('🔧 全ツール読み込み開始');
 
-          let allTools: MCPTool[] = [];
+          let mcpTools: MCPTool[] = [];
           let cursor: string | undefined = undefined;
 
-          // nextCursorがある限り繰り返し読み込み
+          // nextCursorがある限り繰り返し読み込み（MCPツールのみ）
           do {
             const result = await fetchTools(cursor);
-            allTools = [...allTools, ...result.tools];
+            mcpTools = [...mcpTools, ...result.tools];
             cursor = result.nextCursor;
 
             console.log(
-              `📄 ページ読み込み: +${result.tools.length}件 (合計: ${allTools.length}件)`,
+              `📄 MCP ページ読み込み: +${result.tools.length}件 (合計: ${mcpTools.length}件)`,
               cursor ? { nextCursor: 'あり' } : { nextCursor: 'なし' }
             );
           } while (cursor);
+
+          // ローカルツール + MCPツールを結合
+          const allTools = [...LOCAL_TOOLS, ...mcpTools];
 
           set({
             tools: allTools,
@@ -214,7 +220,9 @@ export const useToolStore = create<ToolStoreState>()(
             gatewayStatus: 'healthy',
           });
 
-          console.log(`✅ 全ツール読み込み完了: ${allTools.length}件`);
+          console.log(
+            `✅ 全ツール読み込み完了: ${allTools.length}件 (ローカル: ${LOCAL_TOOLS.length}件, MCP: ${mcpTools.length}件)`
+          );
         } catch (error) {
           const errorMessage =
             error instanceof Error ? error.message : '全ツールの読み込みに失敗しました';
@@ -258,17 +266,31 @@ export const useToolStore = create<ToolStoreState>()(
         try {
           console.log(`🔍 ツール検索実行: "${trimmedQuery}"`);
 
-          const searchResults = await searchTools(trimmedQuery);
+          // ローカルツールから検索
+          const localSearchResults = LOCAL_TOOLS.filter(
+            (tool) =>
+              tool.name.toLowerCase().includes(trimmedQuery.toLowerCase()) ||
+              (tool.description &&
+                tool.description.toLowerCase().includes(trimmedQuery.toLowerCase()))
+          );
+
+          // MCPツールから検索
+          const mcpSearchResults = await searchTools(trimmedQuery);
+
+          // ローカル + MCP の検索結果を結合
+          const allSearchResults = [...localSearchResults, ...mcpSearchResults];
 
           set({
-            searchResults,
+            searchResults: allSearchResults,
             isSearching: false,
             searchError: null,
             gatewayHealthy: true,
             gatewayStatus: 'healthy',
           });
 
-          console.log(`✅ ツール検索完了: ${searchResults.length}件 (クエリ: "${trimmedQuery}")`);
+          console.log(
+            `✅ ツール検索完了: ${allSearchResults.length}件 (ローカル: ${localSearchResults.length}件, MCP: ${mcpSearchResults.length}件, クエリ: "${trimmedQuery}")`
+          );
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'ツール検索に失敗しました';
 

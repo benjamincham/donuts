@@ -9,7 +9,7 @@ stages:
 
 # Common template for Node.js jobs
 .node_template: &node_template
-  image: node:18
+  image: node:20
   cache:
     key: npm-cache
     paths:

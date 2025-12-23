@@ -7,7 +7,7 @@ interface MessageInputProps {
 }
 
 export const MessageInput: React.FC<MessageInputProps> = ({ getScenarioPrompt }) => {
-  const { sendPrompt, isLoading, clearError } = useChatStore();
+  const { sendPrompt, isLoading } = useChatStore();
   const [input, setInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -42,8 +42,8 @@ export const MessageInput: React.FC<MessageInputProps> = ({ getScenarioPrompt })
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
-    // チャットストアのエラーをクリア
-    clearError();
+    // エラーがある場合のみクリア（不要な再レンダリングを防ぐ）
+    // エラーは送信時または新しいメッセージ受信時にクリアされるため、ここでは削除
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -12,7 +12,7 @@ let isInitialized = false;
 // IDカウンター（ランダムではなく連番）
 let idCounter = 0;
 
-export const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ chart, className = '' }) => {
+const MermaidDiagramComponent: React.FC<MermaidDiagramProps> = ({ chart, className = '' }) => {
   const mermaidRef = useRef<HTMLDivElement>(null);
   const chartId = useRef(`mermaid-${++idCounter}`);
   const [isValidSyntax, setIsValidSyntax] = useState<boolean | null>(null);
@@ -110,3 +110,6 @@ export const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ chart, className
     </div>
   );
 };
+
+// React.memoでラップしてプロパティが変わらない限り再レンダリングを防ぐ
+export const MermaidDiagram = React.memo(MermaidDiagramComponent);

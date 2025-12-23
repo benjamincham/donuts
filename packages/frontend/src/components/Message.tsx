@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -23,76 +23,78 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
     (content) => content.type === 'toolUse' || content.type === 'toolResult'
   );
 
-  // Markdownカスタムコンポーネント
+  // Markdownカスタムコンポーネント（メモ化で参照を安定させる）
+  const markdownComponents = useMemo(
+    () => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      code: ({ inline, className, children, ...props }: any) => {
+        const match = /language-(\w+)/.exec(className || '');
+        const language = match ? match[1] : '';
 
-  const markdownComponents = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    code: ({ inline, className, children, ...props }: any) => {
-      const match = /language-(\w+)/.exec(className || '');
-      const language = match ? match[1] : '';
+        if (!inline && match) {
+          // Mermaid図の場合
+          if (language === 'mermaid') {
+            return <MermaidDiagram chart={String(children).replace(/\n$/, '')} />;
+          }
 
-      if (!inline && match) {
-        // Mermaid図の場合
-        if (language === 'mermaid') {
-          return <MermaidDiagram chart={String(children).replace(/\n$/, '')} />;
+          // その他のコードブロック
+          return (
+            <SyntaxHighlighter
+              style={oneLight}
+              language={language}
+              PreTag="div"
+              className="rounded-lg"
+              {...props}
+            >
+              {String(children).replace(/\n$/, '')}
+            </SyntaxHighlighter>
+          );
         }
 
-        // その他のコードブロック
+        // インラインコード
         return (
-          <SyntaxHighlighter
-            style={oneLight}
-            language={language}
-            PreTag="div"
-            className="rounded-lg"
-            {...props}
-          >
-            {String(children).replace(/\n$/, '')}
-          </SyntaxHighlighter>
+          <code className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-sm" {...props}>
+            {children}
+          </code>
         );
-      }
-
-      // インラインコード
-      return (
-        <code className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-sm" {...props}>
+      },
+      // テーブルのスタイル調整
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      table: ({ children, ...props }: any) => (
+        <div className="overflow-x-auto my-4">
+          <table className="min-w-full border-collapse border border-gray-300" {...props}>
+            {children}
+          </table>
+        </div>
+      ),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      th: ({ children, ...props }: any) => (
+        <th
+          className="border border-gray-300 px-4 py-2 bg-gray-50 font-semibold text-left"
+          {...props}
+        >
           {children}
-        </code>
-      );
-    },
-    // テーブルのスタイル調整
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    table: ({ children, ...props }: any) => (
-      <div className="overflow-x-auto my-4">
-        <table className="min-w-full border-collapse border border-gray-300" {...props}>
+        </th>
+      ),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      td: ({ children, ...props }: any) => (
+        <td className="border border-gray-300 px-4 py-2" {...props}>
           {children}
-        </table>
-      </div>
-    ),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    th: ({ children, ...props }: any) => (
-      <th
-        className="border border-gray-300 px-4 py-2 bg-gray-50 font-semibold text-left"
-        {...props}
-      >
-        {children}
-      </th>
-    ),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    td: ({ children, ...props }: any) => (
-      <td className="border border-gray-300 px-4 py-2" {...props}>
-        {children}
-      </td>
-    ),
-    // 引用のスタイル
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    blockquote: ({ children, ...props }: any) => (
-      <blockquote
-        className="border-l-4 border-gray-300 pl-4 py-2 my-4 bg-gray-50 italic"
-        {...props}
-      >
-        {children}
-      </blockquote>
-    ),
-  };
+        </td>
+      ),
+      // 引用のスタイル
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      blockquote: ({ children, ...props }: any) => (
+        <blockquote
+          className="border-l-4 border-gray-300 pl-4 py-2 my-4 bg-gray-50 italic"
+          {...props}
+        >
+          {children}
+        </blockquote>
+      ),
+    }),
+    []
+  ); // 依存配列を空にして、コンポーネントの生存期間中は同じ参照を保持
 
   return (
     <div

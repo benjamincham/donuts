@@ -1,8 +1,21 @@
 # Fullstack AgentCore
 
-AWS Bedrock AgentCore を使用したフルスタック AI エージェントシステム。ローカル開発とAWSデプロイの両方をサポートします。
+Amazon Bedrock AgentCore を使用したフルスタック AI エージェントシステム。
 
 ## 🏗️ アーキテクチャ概要
+
+### システム構成
+
+![./docs/fullstack-agentcore-architecture.drawio.png](./docs/fullstack-agentcore-architecture.drawio.png)
+
+| コンポーネント | 技術スタック | ポート | 役割 | 対応AWSサービス |
+|---------------|-------------|--------|------|----------------|
+| **Frontend** | React + Vite + Tailwind CSS | 5173 | Web UI、ユーザーインターフェース | CloudFront, S3 |
+| **Backend** | Express + JWT + AWS SDK | 3000 | API サーバー、認証管理 | Lambda, API Gateway |
+| **Agent** | Express + Strands Agents SDK | 8080 | AI Agent ランタイム | AgentCore Runtime, AgentCore Memory, Amazon Bedrock |
+| **CLI** | Commander.js ベースのクライアント | - | コマンドライン操作 | Cognito (JWT認証) |
+| **CDK** | AWS CDK + TypeScript | - | インフラストラクチャ管理 | CloudFormation |
+| **Lambda Tools** | AWS Lambda + MCP | - | AgentCore Gateway ツール | Lambda, Bedrock Knowledge Base |
 
 ### ローカル開発構成
 
@@ -10,56 +23,81 @@ AWS Bedrock AgentCore を使用したフルスタック AI エージェントシ
 flowchart TB
     subgraph Local["ローカル環境"]
         CLI[CLI Client<br/>localhost:コマンド]
-        Frontend[Frontend <br/> localhost:5173]
-        Agent[Agent <br/> localhost:8080]
+        Frontend[Frontend<br/>localhost:5173]
+        Backend[Backend API<br/>localhost:3000]
+        Agent[Agent<br/>localhost:8080]
     end
 
     subgraph AWS["☁️ AWS"]
         Bedrock[Bedrock API<br/>Claude 4.5 Sonnet]
+        Cognito[Cognito<br/>User Pool]
     end
 
     CLI --> Agent
+    Frontend --> Backend
     Frontend --> Agent
+    Backend --> Cognito
     Agent --> Bedrock
 
     style Local fill:#e3f2fd
     style AWS fill:#f3e5f5
 ```
 
-### システム構成
-
-- **Frontend**: React + Vite + Tailwind CSS
-- **Agent**: Express + Strands Agents SDK
-- **AI Model**: AWS Bedrock Claude 4.5 Sonnet
-- **CLI**: Commander.js ベースのクライアント
 
 ## 📁 プロジェクト構造
 
 ```
 fullstack-agentcore/
 ├── packages/
-│   ├── cdk/                    # AWS インフラストラクチャ (CDK)
-│   │   ├── lib/                # スタックと Construct 定義
-│   │   └── bin/                # CDK アプリケーション
-│   │
 │   ├── agent/                  # Agent Runtime (Express + Strands)
 │   │   ├── src/                # Agent 実装
 │   │   ├── scripts/            # 開発スクリプト
+│   │   ├── sessions/           # セッション管理
+│   │   ├── docs/               # Agent ドキュメント
+│   │   ├── docker-compose.yml  # Docker 設定
+│   │   ├── Dockerfile          # Docker イメージ
+│   │   └── .env.example        # 環境変数テンプレート
+│   │
+│   ├── backend/                # Backend API (Express + JWT)
+│   │   ├── src/                # API 実装
+│   │   ├── Dockerfile          # Docker イメージ
 │   │   └── docker-compose.yml  # Docker 設定
 │   │
 │   ├── frontend/               # React Frontend (Vite)
 │   │   ├── src/                # Frontend コード
-│   │   └── public/             # 静的ファイル
+│   │   ├── public/             # 静的ファイル
+│   │   └── .env.example        # 環境変数テンプレート
 │   │
 │   ├── client/                 # CLI クライアント
-│   │   └── src/                # CLI 実装
+│   │   ├── src/                # CLI 実装
+│   │   └── .env.example        # 環境変数テンプレート
+│   │
+│   ├── cdk/                    # AWS インフラストラクチャ (CDK)
+│   │   ├── lib/                # スタックと Construct 定義
+│   │   └── bin/                # CDK アプリケーション
 │   │
 │   └── lambda-tools/           # AgentCore Gateway ツール
-│       └── tools/echo-tool/    # サンプル Lambda ツール
+│       └── utility-tools/      # Lambda ユーティリティツール
+│
+├── docs/                       # プロジェクトドキュメント
+│   ├── README.md               # ドキュメント一覧
+│   ├── aws-architecture.md     # AWS アーキテクチャ
+│   └── jwt-authentication.md   # JWT 認証システム
+│
+├── .husky/                     # Git hooks
+│   └── pre-commit              # コミット前チェック
+│
+├── cdk.out/                    # CDK 出力ファイル
+├── node_modules/               # 依存関係
 │
 ├── package.json                # Workspace 設定
-├── openapi.yaml               # API ドキュメント
-└── README.md                  # このファイル
+├── tsconfig.base.json          # TypeScript 基本設定
+├── eslint.config.mjs           # ESLint 設定
+├── .prettierrc                 # Prettier 設定
+├── .gitlab-ci.yml              # CI/CD パイプライン
+├── openapi.yaml                # API ドキュメント
+├── cdk.json                    # CDK 設定
+└── README.md                   # このファイル
 ```
 
 ## 🚀 Getting Started (ローカル開発)

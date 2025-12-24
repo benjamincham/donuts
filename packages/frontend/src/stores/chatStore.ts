@@ -136,12 +136,6 @@ export const useChatStore = create<ChatStore>()(
         if (!sessionId) {
           sessionId = generateSessionId();
           set({ sessionId });
-
-          // URL を更新して sessionId を反映
-          if (navigateFunction) {
-            console.log(`🆕 新しいセッションを作成: ${sessionId}`);
-            navigateFunction(`/chat/${sessionId}`, { replace: true });
-          }
         }
 
         try {
@@ -152,6 +146,12 @@ export const useChatStore = create<ChatStore>()(
             type: 'user',
             contents: stringToContents(prompt),
           });
+
+          // URL を更新して sessionId を反映（メッセージ追加後に遷移）
+          if (isNewSession && navigateFunction) {
+            console.log(`🆕 新しいセッションを作成: ${sessionId}`);
+            navigateFunction(`/chat/${sessionId}`, { replace: true });
+          }
 
           // アシスタントの応答メッセージを作成（ストリーミング用）
           const assistantMessageId = addMessage({

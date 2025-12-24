@@ -37,10 +37,17 @@ export function ChatPage() {
   }, [sessionId, setSessionId, clearMessages]);
 
   // sessionId が変更され、まだこのセッションの履歴が読み込まれていない場合は読み込み
+  // ただし、新規セッション（既にメッセージがある）の場合は履歴取得をスキップ
   useEffect(() => {
     if (sessionId && activeSessionId !== sessionId) {
-      console.log(`📥 セッション履歴を取得開始: ${sessionId}`);
-      selectSession(sessionId);
+      const { messages } = useChatStore.getState();
+      // メッセージが既にある場合は新規セッションなので履歴取得不要
+      if (messages.length === 0) {
+        console.log(`📥 セッション履歴を取得開始: ${sessionId}`);
+        selectSession(sessionId);
+      } else {
+        console.log(`⏭️ 新規セッションのため履歴取得をスキップ: ${sessionId}`);
+      }
     }
   }, [sessionId, activeSessionId, selectSession]);
 

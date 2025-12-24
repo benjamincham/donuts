@@ -348,6 +348,173 @@ export const LOCAL_TOOLS: MCPTool[] = [
       required: ['action'],
     },
   },
+  {
+    name: 's3_list_files',
+    description:
+      'ユーザーのS3ストレージ内のファイルとディレクトリの一覧を取得します。指定されたパス配下のコンテンツを探索できます。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          default: '/',
+          description: '一覧を取得するディレクトリパス（デフォルト: ルート "/"）',
+        },
+        recursive: {
+          type: 'boolean',
+          default: false,
+          description: '再帰的にサブディレクトリも含めて取得するか（デフォルト: false）',
+        },
+        maxResults: {
+          type: 'number',
+          minimum: 1,
+          maximum: 1000,
+          default: 100,
+          description: '取得する最大結果数（1-1000、デフォルト: 100）',
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 's3_download_file',
+    description:
+      'ユーザーのS3ストレージからファイルをダウンロードまたは読み取ります。テキストファイルの場合は内容を直接取得し、大きなファイルやバイナリファイルの場合は署名付きダウンロードURLを生成します。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'ダウンロード・読み取りするファイルのパス（必須）',
+        },
+        returnContent: {
+          type: 'boolean',
+          default: true,
+          description:
+            'テキストファイルの内容を直接返すか（デフォルト: true）。falseの場合は常に署名付きURLを返す',
+        },
+        maxContentLength: {
+          type: 'number',
+          minimum: 1024,
+          maximum: 1048576,
+          default: 512000,
+          description: '内容を取得する場合の最大サイズ（バイト）。デフォルト: 500KB、最大: 1MB',
+        },
+      },
+      required: ['path'],
+    },
+  },
+  {
+    name: 's3_upload_file',
+    description:
+      'ユーザーのS3ストレージにテキストコンテンツをファイルとしてアップロードします。コード、ドキュメント、設定ファイルなどを保存できます。注意: 日本語や非ASCII文字を含むファイルをアップロードする際は、contentTypeにcharsetを指定してください（例: "text/plain; charset=utf-8"）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description:
+            'アップロード先のファイルパス（必須）。例: "/notes/memo.txt", "/code/sample.py"',
+        },
+        content: {
+          type: 'string',
+          description: 'ファイルの内容（必須）。テキストベースのコンテンツ',
+        },
+        contentType: {
+          type: 'string',
+          description:
+            'MIMEタイプ（オプション）。指定しない場合はファイル名から自動推測。例: "text/plain", "application/json"',
+        },
+      },
+      required: ['path', 'content'],
+    },
+  },
+  {
+    name: 's3_get_presigned_urls',
+    description:
+      'ユーザーのS3ストレージ内のファイルに対する署名付きURLを一括で生成します。ダウンロード用またはアップロード用のURLを取得できます。複数のファイルを一度に処理できます。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        paths: {
+          oneOf: [
+            { type: 'string' },
+            {
+              type: 'array',
+              items: { type: 'string' },
+            },
+          ],
+          description: 'ファイルパス（単一の文字列または文字列の配列）',
+        },
+        operation: {
+          type: 'string',
+          enum: ['download', 'upload'],
+          default: 'download',
+          description: '操作タイプ: "download"（ダウンロード用）または "upload"（アップロード用）',
+        },
+        expiresIn: {
+          type: 'number',
+          minimum: 60,
+          maximum: 604800,
+          default: 3600,
+          description:
+            '署名付きURLの有効期限（秒）。デフォルト: 3600（1時間）、最大: 604800（7日間）',
+        },
+        contentType: {
+          type: 'string',
+          description: 'アップロード操作の場合のContent-Type（オプション）',
+        },
+      },
+      required: ['paths'],
+    },
+  },
+  {
+    name: 's3_sync_folder',
+    description:
+      'S3ストレージからフォルダ全体をローカル環境（Agent実行コンテナ）にダウンロードします。aws s3 syncコマンド相当の機能を提供し、複数ファイルを一括で同期できます。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        s3Path: {
+          type: 'string',
+          description: 'S3上のフォルダパス（例: "/project/data"）',
+        },
+        localPath: {
+          type: 'string',
+          description: 'ローカルの保存先パス（/tmp/ws配下のみ、例: "/tmp/ws/data"）',
+        },
+        recursive: {
+          type: 'boolean',
+          default: true,
+          description: 'サブディレクトリも含めて同期するか（デフォルト: true）',
+        },
+        overwrite: {
+          type: 'boolean',
+          default: false,
+          description: '既存ファイルを上書きするか（デフォルト: false）',
+        },
+        maxConcurrency: {
+          type: 'number',
+          minimum: 1,
+          maximum: 10,
+          default: 5,
+          description: '並列ダウンロード数（1-10、デフォルト: 5）',
+        },
+        maxFiles: {
+          type: 'number',
+          minimum: 1,
+          maximum: 1000,
+          default: 100,
+          description: '最大ダウンロードファイル数（1-1000、デフォルト: 100）',
+        },
+        filePattern: {
+          type: 'string',
+          description: 'ファイル名フィルタ（globパターン、例: "*.txt", "data_*.json"）',
+        },
+      },
+      required: ['s3Path', 'localPath'],
+    },
+  },
 ];
 
 /**

@@ -1,29 +1,29 @@
 import React, { useState } from 'react';
-import { Plus, X, Save, AlertCircle, Sparkles } from 'lucide-react';
+import { Plus, X, AlertCircle, Sparkles, Settings, Wrench } from 'lucide-react';
 import { ToolSelector } from './ToolSelector';
+import { IconPicker } from './ui/IconPicker';
+import { SidebarTabsLayout, type TabItem } from './ui/SidebarTabs';
 import type { CreateAgentInput, Agent, Scenario } from '../types/agent';
 import { streamAgentResponse, createAgentConfigGenerationPrompt } from '../api/agent';
 import { useToolStore } from '../stores/toolStore';
-import { parseStreamingXml, createInitialXmlState, type XmlParseState } from '../utils/xmlParser';
+import { parseStreamingXml, createInitialXmlState } from '../utils/xmlParser';
 
 interface AgentFormProps {
   agent?: Agent;
   onSubmit: (data: CreateAgentInput) => void;
-  onCancel: () => void;
   isLoading?: boolean;
 }
 
-export const AgentForm: React.FC<AgentFormProps> = ({
-  agent,
-  onSubmit,
-  onCancel,
-  isLoading = false,
-}) => {
+type TabType = 'basic' | 'tools';
+
+export const AgentForm: React.FC<AgentFormProps> = ({ agent, onSubmit, isLoading = false }) => {
+  const [activeTab, setActiveTab] = useState<TabType>('basic');
   const [formData, setFormData] = useState<CreateAgentInput>(() => {
     if (agent) {
       return {
         name: agent.name,
         description: agent.description,
+        icon: agent.icon || 'Bot',
         systemPrompt: agent.systemPrompt,
         enabledTools: [...agent.enabledTools],
         scenarios: agent.scenarios.map((s) => ({
@@ -35,6 +35,7 @@ export const AgentForm: React.FC<AgentFormProps> = ({
     return {
       name: '',
       description: '',
+      icon: 'Bot',
       systemPrompt: '',
       enabledTools: [],
       scenarios: [],
@@ -45,10 +46,6 @@ export const AgentForm: React.FC<AgentFormProps> = ({
 
   // AI生成関連の状態
   const [isGenerating, setIsGenerating] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_xmlBuffer, setXmlBuffer] = useState('');
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_xmlParseState, setXmlParseState] = useState<XmlParseState | null>(null);
 
   const { tools } = useToolStore();
 
@@ -155,11 +152,9 @@ export const AgentForm: React.FC<AgentFormProps> = ({
     }
 
     setIsGenerating(true);
-    setXmlBuffer('');
 
     // XMLパース状態を初期化
     const initialParseState = createInitialXmlState();
-    setXmlParseState(initialParseState);
 
     // 利用可能なツール名を取得
     const availableTools = tools.map((tool) => tool.name);
@@ -178,7 +173,6 @@ export const AgentForm: React.FC<AgentFormProps> = ({
       await streamAgentResponse(generationPrompt, undefined, {
         onTextDelta: (text: string) => {
           accumulatedXml += text;
-          setXmlBuffer(accumulatedXml);
 
           // XMLを逐次解析してフォームに反映
           const { state: newParseState, updates } = parseStreamingXml(
@@ -186,7 +180,6 @@ export const AgentForm: React.FC<AgentFormProps> = ({
             currentParseState
           );
           currentParseState = newParseState;
-          setXmlParseState(newParseState);
 
           // システムプロンプトの更新
           if (updates.systemPrompt !== undefined) {
@@ -235,234 +228,259 @@ export const AgentForm: React.FC<AgentFormProps> = ({
     }
   };
 
+  // タブ設定
+  const tabs: TabItem<TabType>[] = [
+    { id: 'basic', label: '基本設定', icon: Settings },
+    { id: 'tools', label: 'ツール', icon: Wrench },
+  ];
+
   return (
-    <div>
-      <form id="agent-form" onSubmit={handleSubmit} className="space-y-6">
-        {/* Agent名 */}
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-            Agent名 <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            id="name"
-            value={formData.name}
-            onChange={(e) => {
-              setFormData((prev) => ({ ...prev, name: e.target.value }));
-              if (errors.name) {
-                setErrors((prev) => ({ ...prev, name: '' }));
-              }
-            }}
-            disabled={isLoading || isGenerating}
-            placeholder="例: コードレビューAgent"
-            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed ${
-              errors.name ? 'border-red-500' : 'border-gray-300'
-            }`}
-          />
-          {errors.name && (
-            <div className="flex items-center space-x-1 mt-1">
-              <AlertCircle className="w-4 h-4 text-red-500" />
-              <span className="text-sm text-red-600">{errors.name}</span>
-            </div>
-          )}
-        </div>
+    <SidebarTabsLayout tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab}>
+      <form id="agent-form" onSubmit={handleSubmit} className="flex-1 flex flex-col">
+        {/* パネルコンテンツ */}
+        <div className="h-[80vh] overflow-y-auto px-6 py-6">
+          {/* 基本設定パネル */}
+          {activeTab === 'basic' && (
+            <div className="space-y-6 max-w-5xl mx-auto">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6">基本設定</h2>
 
-        {/* 説明 */}
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-            説明 <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            id="description"
-            value={formData.description}
-            onChange={(e) => {
-              setFormData((prev) => ({ ...prev, description: e.target.value }));
-              if (errors.description) {
-                setErrors((prev) => ({ ...prev, description: '' }));
-              }
-            }}
-            disabled={isLoading || isGenerating}
-            placeholder="このAgentの用途や特徴を説明してください"
-            rows={1}
-            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed resize-none ${
-              errors.description ? 'border-red-500' : 'border-gray-300'
-            }`}
-          />
-          {errors.description && (
-            <div className="flex items-center space-x-1 mt-1">
-              <AlertCircle className="w-4 h-4 text-red-500" />
-              <span className="text-sm text-red-600">{errors.description}</span>
-            </div>
-          )}
-        </div>
-
-        {/* システムプロンプト */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <label htmlFor="systemPrompt" className="text-sm font-medium text-gray-700">
-              システムプロンプト <span className="text-red-500">*</span>
-            </label>
-            {/* AI自動生成ボタン */}
-            <button
-              type="button"
-              onClick={handleAIGeneration}
-              disabled={
-                isLoading || isGenerating || !formData.name.trim() || !formData.description.trim()
-              }
-              className="inline-flex items-center space-x-1 px-2 py-1 text-xs text-gray-500 bg-white border border-gray-200 rounded hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Sparkles className="w-3 h-3" />
-              <span>{isGenerating ? '生成中...' : 'AIで自動生成'}</span>
-            </button>
-          </div>
-          <textarea
-            id="systemPrompt"
-            value={formData.systemPrompt}
-            onChange={(e) => {
-              setFormData((prev) => ({ ...prev, systemPrompt: e.target.value }));
-              if (errors.systemPrompt) {
-                setErrors((prev) => ({ ...prev, systemPrompt: '' }));
-              }
-            }}
-            disabled={isLoading || isGenerating}
-            placeholder="このAgentの役割や振る舞いを定義してください"
-            rows={6}
-            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed resize-none ${
-              errors.systemPrompt ? 'border-red-500' : 'border-gray-300'
-            }`}
-          />
-          {errors.systemPrompt && (
-            <div className="flex items-center space-x-1 mt-1">
-              <AlertCircle className="w-4 h-4 text-red-500" />
-              <span className="text-sm text-red-600">{errors.systemPrompt}</span>
-            </div>
-          )}
-
-          {/* 生成エラー表示 */}
-          {errors.generation && (
-            <div className="flex items-center space-x-1 mt-1">
-              <AlertCircle className="w-4 h-4 text-red-500" />
-              <span className="text-sm text-red-600">{errors.generation}</span>
-            </div>
-          )}
-        </div>
-
-        {/* ツール選択 */}
-        <div>
-          <ToolSelector
-            selectedTools={formData.enabledTools}
-            onSelectionChange={(tools) => setFormData((prev) => ({ ...prev, enabledTools: tools }))}
-            disabled={isLoading || isGenerating}
-          />
-        </div>
-
-        {/* シナリオ管理 */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-gray-700">Scenarios（オプション）</label>
-            <button
-              type="button"
-              onClick={addScenario}
-              disabled={isLoading || isGenerating}
-              className="inline-flex items-center space-x-1 text-sm text-blue-600 hover:text-blue-800 disabled:text-gray-400 disabled:cursor-not-allowed"
-            >
-              <Plus className="w-4 h-4" />
-              <span>シナリオ追加</span>
-            </button>
-          </div>
-
-          <p className="text-sm text-gray-600 mb-4">
-            よく使用するやり取りのパターンをシナリオとして登録できます。シナリオのタイトルと具体的な内容を入力してください。
-          </p>
-
-          <div className="space-y-3">
-            {formData.scenarios.map((scenario, index) => (
-              <div key={index} className="flex items-center space-x-3">
-                {/* タイトル（左側・小さめ） */}
-                <div className="flex-shrink-0 w-48">
-                  <textarea
-                    value={scenario.title}
-                    onChange={(e) => updateScenario(index, 'title', e.target.value)}
+              {/* Agent名 */}
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                  Name & Icon
+                </label>
+                <p className="text-sm text-gray-500 mb-3">
+                  エージェントの表示名とアイコンを設定してください。アイコンをクリックして変更できます。
+                </p>
+                <div className="flex items-center space-x-3">
+                  <IconPicker
+                    value={formData.icon}
+                    onChange={(icon) => setFormData((prev) => ({ ...prev, icon }))}
                     disabled={isLoading || isGenerating}
-                    placeholder="例: Python基礎レッスン"
-                    rows={2}
-                    className={`w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed resize-y ${
-                      errors[`scenario_title_${index}`] ? 'border-red-500' : 'border-gray-300'
+                  />
+                  <input
+                    type="text"
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => {
+                      setFormData((prev) => ({ ...prev, name: e.target.value }));
+                      if (errors.name) {
+                        setErrors((prev) => ({ ...prev, name: '' }));
+                      }
+                    }}
+                    disabled={isLoading || isGenerating}
+                    placeholder="例: プログラミングメンター"
+                    className={`flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                      errors.name ? 'border-red-500' : 'border-gray-300'
                     }`}
                   />
-                  {errors[`scenario_title_${index}`] && (
-                    <div className="flex items-center space-x-1 mt-1">
-                      <AlertCircle className="w-3 h-3 text-red-500" />
-                      <span className="text-xs text-red-600">
-                        {errors[`scenario_title_${index}`]}
-                      </span>
-                    </div>
-                  )}
                 </div>
-
-                {/* プロンプト（右側・大きめ） */}
-                <div className="flex-1">
-                  <textarea
-                    value={scenario.prompt}
-                    onChange={(e) => updateScenario(index, 'prompt', e.target.value)}
-                    disabled={isLoading || isGenerating}
-                    placeholder="例: Pythonの基本文法について説明してください"
-                    rows={2}
-                    className={`w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed resize-y ${
-                      errors[`scenario_prompt_${index}`] ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors[`scenario_prompt_${index}`] && (
-                    <div className="flex items-center space-x-1 mt-1">
-                      <AlertCircle className="w-3 h-3 text-red-500" />
-                      <span className="text-xs text-red-600">
-                        {errors[`scenario_prompt_${index}`]}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* 削除ボタン（最右端） */}
-                <button
-                  type="button"
-                  onClick={() => removeScenario(index)}
-                  disabled={isLoading || isGenerating}
-                  className="flex-shrink-0 text-gray-400 hover:text-red-500 disabled:text-gray-300 disabled:cursor-not-allowed transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                {errors.name && (
+                  <div className="flex items-center space-x-1 mt-2">
+                    <AlertCircle className="w-4 h-4 text-red-500" />
+                    <span className="text-sm text-red-600">{errors.name}</span>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
 
-          {/* 空の状態 */}
-          {formData.scenarios.length === 0 && (
-            <div className="text-center py-4 text-gray-400 text-sm">
-              シナリオを追加するには「シナリオ追加」ボタンをクリックしてください
+              {/* 説明 */}
+              <div>
+                <label
+                  htmlFor="description"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Description
+                </label>
+                <p className="text-sm text-gray-500 mb-3">
+                  このエージェントの役割や特徴を簡潔に説明してください。
+                </p>
+                <textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => {
+                    setFormData((prev) => ({ ...prev, description: e.target.value }));
+                    if (errors.description) {
+                      setErrors((prev) => ({ ...prev, description: '' }));
+                    }
+                  }}
+                  disabled={isLoading || isGenerating}
+                  placeholder="例: プログラミングの基礎から応用まで教えるAIメンター"
+                  rows={2}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed resize-none ${
+                    errors.description ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.description && (
+                  <div className="flex items-center space-x-1 mt-2">
+                    <AlertCircle className="w-4 h-4 text-red-500" />
+                    <span className="text-sm text-red-600">{errors.description}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* システムプロンプト */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label htmlFor="systemPrompt" className="text-sm font-medium text-gray-700">
+                    システムプロンプト <span className="text-red-500">*</span>
+                  </label>
+                  {/* AI自動生成ボタン */}
+                  <button
+                    type="button"
+                    onClick={handleAIGeneration}
+                    disabled={
+                      isLoading ||
+                      isGenerating ||
+                      !formData.name.trim() ||
+                      !formData.description.trim()
+                    }
+                    className="inline-flex items-center space-x-1 px-3 py-1.5 text-xs text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>{isGenerating ? '生成中...' : 'AIで自動生成'}</span>
+                  </button>
+                </div>
+                <p className="text-sm text-gray-500 mb-3">
+                  エージェントの振る舞いを定義するシステムプロンプトを入力してください。どのような役割を果たし、どのように応答すべきかを詳細に記述します。作業するプロジェクトのディレクトリパスを明確に指示することを推奨します。
+                </p>
+                <textarea
+                  id="systemPrompt"
+                  value={formData.systemPrompt}
+                  onChange={(e) => {
+                    setFormData((prev) => ({ ...prev, systemPrompt: e.target.value }));
+                    if (errors.systemPrompt) {
+                      setErrors((prev) => ({ ...prev, systemPrompt: '' }));
+                    }
+                  }}
+                  disabled={isLoading || isGenerating}
+                  placeholder="例: あなたは親切で知識豊富なAIアシスタントです。以下の方針でユーザーをサポートします：&#10;- 明確で理解しやすい説明を提供する&#10;- 必要に応じて具体例を示す&#10;- 不明な点は確認してから回答する"
+                  rows={12}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed resize-none font-mono text-sm ${
+                    errors.systemPrompt ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.systemPrompt && (
+                  <div className="flex items-center space-x-1 mt-2">
+                    <AlertCircle className="w-4 h-4 text-red-500" />
+                    <span className="text-sm text-red-600">{errors.systemPrompt}</span>
+                  </div>
+                )}
+                {errors.generation && (
+                  <div className="flex items-center space-x-1 mt-2">
+                    <AlertCircle className="w-4 h-4 text-red-500" />
+                    <span className="text-sm text-red-600">{errors.generation}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* シナリオ管理 */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Scenarios（オプション）
+                  </label>
+                  <button
+                    type="button"
+                    onClick={addScenario}
+                    disabled={isLoading || isGenerating}
+                    className="inline-flex items-center space-x-1 text-sm text-blue-600 hover:text-blue-800 disabled:text-gray-400 disabled:cursor-not-allowed"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>シナリオ追加</span>
+                  </button>
+                </div>
+
+                <p className="text-sm text-gray-500 mb-4">
+                  よく使用するやり取りのパターンをシナリオとして登録できます。シナリオのタイトルと具体的な内容を入力してください。
+                </p>
+
+                <div className="space-y-3">
+                  {formData.scenarios.map((scenario, index) => (
+                    <div key={index} className="flex items-start space-x-3">
+                      {/* タイトル（左側） */}
+                      <div className="flex-shrink-0 w-48">
+                        <textarea
+                          value={scenario.title}
+                          onChange={(e) => updateScenario(index, 'title', e.target.value)}
+                          disabled={isLoading || isGenerating}
+                          placeholder="例: Python基礎レッスン"
+                          rows={2}
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed resize-y ${
+                            errors[`scenario_title_${index}`] ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                        />
+                        {errors[`scenario_title_${index}`] && (
+                          <div className="flex items-center space-x-1 mt-1">
+                            <AlertCircle className="w-3 h-3 text-red-500" />
+                            <span className="text-xs text-red-600">
+                              {errors[`scenario_title_${index}`]}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* プロンプト（右側） */}
+                      <div className="flex-1">
+                        <textarea
+                          value={scenario.prompt}
+                          onChange={(e) => updateScenario(index, 'prompt', e.target.value)}
+                          disabled={isLoading || isGenerating}
+                          placeholder="例: Pythonの基本文法について説明してください"
+                          rows={2}
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed resize-y ${
+                            errors[`scenario_prompt_${index}`]
+                              ? 'border-red-500'
+                              : 'border-gray-300'
+                          }`}
+                        />
+                        {errors[`scenario_prompt_${index}`] && (
+                          <div className="flex items-center space-x-1 mt-1">
+                            <AlertCircle className="w-3 h-3 text-red-500" />
+                            <span className="text-xs text-red-600">
+                              {errors[`scenario_prompt_${index}`]}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 削除ボタン */}
+                      <button
+                        type="button"
+                        onClick={() => removeScenario(index)}
+                        disabled={isLoading || isGenerating}
+                        className="flex-shrink-0 p-1 text-gray-400 hover:text-red-500 disabled:text-gray-300 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 空の状態 */}
+                {formData.scenarios.length === 0 && (
+                  <div className="text-center py-6 text-gray-400 text-sm bg-gray-50 rounded-lg border border-gray-200 border-dashed">
+                    シナリオを追加するには「シナリオ追加」ボタンをクリックしてください
+                  </div>
+                )}
+              </div>
             </div>
           )}
-        </div>
 
-        {/* ボタン */}
-        <div className="flex items-center justify-end space-x-3 pt-6">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isLoading}
-            className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            キャンセル
-          </button>
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="inline-flex items-center space-x-2 px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Save className="w-4 h-4" />
-            <span>{isLoading ? '保存中...' : '保存'}</span>
-          </button>
+          {/* ツールパネル */}
+          {activeTab === 'tools' && (
+            <div className="space-y-6 max-w-5xl mx-auto">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6">ツール選択</h2>
+              <ToolSelector
+                selectedTools={formData.enabledTools}
+                onSelectionChange={(tools) =>
+                  setFormData((prev) => ({ ...prev, enabledTools: tools }))
+                }
+                disabled={isLoading || isGenerating}
+              />
+            </div>
+          )}
         </div>
       </form>
-    </div>
+    </SidebarTabsLayout>
   );
 };

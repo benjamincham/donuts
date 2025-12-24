@@ -13,6 +13,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({ getScenarioPrompt })
   const [input, setInput] = useState('');
   const [isStorageModalOpen, setIsStorageModalOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const prevLoadingRef = useRef(isLoading);
 
   // テキストエリアの自動リサイズ
   useEffect(() => {
@@ -22,6 +23,15 @@ export const MessageInput: React.FC<MessageInputProps> = ({ getScenarioPrompt })
       textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
     }
   }, [input]);
+
+  // ローディング完了時にフォーカスを戻す
+  useEffect(() => {
+    // ローディングが完了した時（true → false）にフォーカスを戻す
+    if (prevLoadingRef.current && !isLoading) {
+      textareaRef.current?.focus();
+    }
+    prevLoadingRef.current = isLoading;
+  }, [isLoading]);
 
   // シナリオプロンプトの自動入力
   useEffect(() => {
@@ -63,6 +73,9 @@ export const MessageInput: React.FC<MessageInputProps> = ({ getScenarioPrompt })
       // 入力フィールドを即座にクリア
       setInput('');
 
+      // 送信後にテキストエリアにフォーカスを戻す
+      textareaRef.current?.focus();
+
       // メッセージ送信（非同期で継続）
       await sendPrompt(messageToSend);
     } catch (err) {
@@ -94,8 +107,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({ getScenarioPrompt })
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             placeholder="メッセージを入力してください..."
-            className="w-full px-4 py-3 pr-12 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-300 focus:border-transparent resize-none min-h-[52px] max-h-[200px] bg-white"
-            disabled={isLoading}
+            className="w-full px-4 py-3 pr-12 border border-gray-200 rounded-2xl focus:outline-none focus:ring-1 focus:ring-gray-200 focus:border-transparent resize-none min-h-[52px] max-h-[200px] bg-white"
             rows={1}
             style={{ height: 'auto' }}
           />

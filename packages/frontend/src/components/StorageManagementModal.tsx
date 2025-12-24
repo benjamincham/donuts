@@ -193,12 +193,62 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
   const fileInputRef = useRef<HTMLInputElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
 
+  // URLハッシュからパスを取得
+  const getPathFromHash = (): string => {
+    const hash = window.location.hash;
+    const match = hash.match(/#storage=(.+)/);
+    return match ? decodeURIComponent(match[1]) : '/';
+  };
+
+  // URLハッシュにパスを設定
+  const setPathToHash = (path: string) => {
+    const newHash = `#storage=${encodeURIComponent(path)}`;
+    window.history.pushState(null, '', newHash);
+  };
+
+  // URLハッシュをクリア
+  const clearHash = () => {
+    if (window.location.hash.startsWith('#storage=')) {
+      window.history.pushState(null, '', window.location.pathname + window.location.search);
+    }
+  };
+
   // モーダル表示時にデータを読み込み
   useEffect(() => {
     if (isOpen) {
-      loadItems();
+      // URLハッシュからパスを読み込む、なければルートパスを使用
+      const pathFromHash = getPathFromHash();
+      // 初期表示時にもURLハッシュを設定（履歴を追加）
+      setPathToHash(pathFromHash);
+      loadItems(pathFromHash);
+    } else {
+      // モーダルを閉じたらURLハッシュをクリア
+      clearHash();
     }
   }, [isOpen, loadItems]);
+
+  // ブラウザバック/フォワードの検知
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleHashChange = () => {
+      if (window.location.hash.startsWith('#storage=')) {
+        const pathFromHash = getPathFromHash();
+        // 直接ストアのメソッドを呼び出す
+        useStorageStore.getState().loadItems(pathFromHash);
+      } else {
+        // ハッシュがない場合はモーダルを閉じる
+        onClose();
+      }
+    };
+
+    window.addEventListener('popstate', handleHashChange);
+    window.addEventListener('hashchange', handleHashChange);
+    return () => {
+      window.removeEventListener('popstate', handleHashChange);
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, [isOpen, onClose]);
 
   // コンテキストメニューの外部クリックを検知
   useEffect(() => {
@@ -218,10 +268,12 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
 
   // パスナビゲーション
   const handleNavigate = (path: string) => {
+    setPathToHash(path);
     loadItems(path);
   };
 
   const handleNavigateToRoot = () => {
+    setPathToHash('/');
     loadItems('/');
   };
 

@@ -25,6 +25,15 @@ export default {
         '2xl': '1rem',
         '3xl': '1.5rem',
       },
+      animation: {
+        'subtle-fade-in': 'subtle-fade-in 0.2s ease-out',
+      },
+      keyframes: {
+        'subtle-fade-in': {
+          '0%': { opacity: '0.5' },
+          '100%': { opacity: '1' },
+        },
+      },
     },
   },
   plugins: [],

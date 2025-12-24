@@ -6,6 +6,7 @@ import { streamAgentResponse } from '../api/agent';
 import type { ConversationMessage } from '../api/sessions';
 import { useAgentStore } from './agentStore';
 import { useStorageStore } from './storageStore';
+import { useSessionStore } from './sessionStore';
 
 // AWS AgentCore sessionId制約: [a-zA-Z0-9][a-zA-Z0-9-_]*
 // 英数字のみのカスタムnanoid（ハイフンとアンダースコアを除外）
@@ -127,6 +128,9 @@ export const useChatStore = create<ChatStore>()(
       sendPrompt: async (prompt: string) => {
         const { addMessage, updateMessage } = get();
         let { sessionId } = get();
+
+        // 新規セッションかどうかを判定（セッション一覧更新に使用）
+        const isNewSession = !sessionId;
 
         // セッションIDがない場合は新しく生成（初回メッセージ送信時）
         if (!sessionId) {
@@ -288,6 +292,12 @@ export const useChatStore = create<ChatStore>()(
 
                 set({ isLoading: false });
                 console.log(`✅ メッセージ送信完了 (セッション: ${sessionId})`);
+
+                // 新規セッションの場合、セッション一覧を更新
+                if (isNewSession) {
+                  console.log('🔄 新規セッション作成完了、セッション一覧を更新中...');
+                  useSessionStore.getState().refreshSessions();
+                }
               },
               onError: (error: Error) => {
                 // エラーメッセージで更新

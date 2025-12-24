@@ -29,15 +29,17 @@ interface SessionItemProps {
   session: SessionSummary;
   isActive: boolean;
   onSelect: () => void;
+  isNew?: boolean;
 }
 
-function SessionItem({ session, isActive, onSelect }: SessionItemProps) {
+function SessionItem({ session, isActive, onSelect, isNew = false }: SessionItemProps) {
   return (
     <button
       onClick={onSelect}
       className={`
         w-full text-left p-2 rounded-lg transition-all duration-200 group
         ${isActive ? 'bg-gray-100' : 'hover:bg-gray-100'}
+        ${isNew ? 'animate-subtle-fade-in' : ''}
       `}
     >
       <div className="flex items-center gap-2">
@@ -87,6 +89,10 @@ export function SessionSidebar() {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const userDropdownRef = useRef<HTMLDivElement>(null);
 
+  // 新規セッション検出用
+  const prevSessionIdsRef = useRef<Set<string>>(new Set());
+  const [newSessionIds, setNewSessionIds] = useState<Set<string>>(new Set());
+
   // 初回読み込み
   useEffect(() => {
     if (user && !hasLoadedOnce && !isLoadingSessions) {
@@ -94,6 +100,32 @@ export function SessionSidebar() {
       loadSessions();
     }
   }, [user, hasLoadedOnce, isLoadingSessions, loadSessions]);
+
+  // 新規セッション検出
+  useEffect(() => {
+    const currentIds = new Set(sessions.map((s) => s.sessionId));
+    const prevIds = prevSessionIdsRef.current;
+
+    // 新規追加されたセッションを検出
+    const newIds = new Set<string>();
+    currentIds.forEach((id) => {
+      if (!prevIds.has(id)) {
+        newIds.add(id);
+      }
+    });
+
+    if (newIds.size > 0) {
+      // setStateを非同期で実行してeslintエラーを回避
+      setTimeout(() => {
+        setNewSessionIds(newIds);
+      }, 0);
+      // アニメーション完了後にクリア
+      const timer = setTimeout(() => setNewSessionIds(new Set()), 300);
+      return () => clearTimeout(timer);
+    }
+
+    prevSessionIdsRef.current = currentIds;
+  }, [sessions]);
 
   // URL のセッションID と現在のアクティブセッションを同期
   useEffect(() => {
@@ -332,6 +364,7 @@ export function SessionSidebar() {
                   session={session}
                   isActive={session.sessionId === activeSessionId}
                   onSelect={() => handleSessionSelect(session)}
+                  isNew={newSessionIds.has(session.sessionId)}
                 />
               ))}
             </div>

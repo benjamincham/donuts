@@ -11,6 +11,7 @@ import {
   Search,
   PanelRight,
   Wrench,
+  Bot,
   User,
   LogOut,
   X,
@@ -167,16 +168,22 @@ export function SessionSidebar() {
     navigate(`/chat/${session.sessionId}`);
   };
 
-  // 検索ボタン（モック）
+  // 検索ボタン
   const handleSearch = () => {
-    console.log('🔍 検索機能（未実装）');
-    // TODO: 検索機能の実装
+    console.log('🔍 チャット検索ページへナビゲート');
+    navigate('/search');
   };
 
   // ツール検索
   const handleToolsSearch = () => {
     console.log('🔧 ツール検索ページへナビゲート');
     navigate('/tools');
+  };
+
+  // エージェント検索
+  const handleAgentsSearch = () => {
+    console.log('🤖 エージェント検索ページへナビゲート');
+    navigate('/agents');
   };
 
   // ホームページ遷移
@@ -306,6 +313,17 @@ export function SessionSidebar() {
           >
             <Wrench className="w-5 h-5 flex-shrink-0" />
             {shouldShowExpanded && <span className="text-sm">ツールを検索</span>}
+          </button>
+
+          <button
+            onClick={handleAgentsSearch}
+            className={`p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2 ${
+              shouldShowExpanded ? 'w-full text-left' : 'w-auto'
+            }`}
+            title={!shouldShowExpanded ? 'エージェントを検索' : undefined}
+          >
+            <Bot className="w-5 h-5 flex-shrink-0" />
+            {shouldShowExpanded && <span className="text-sm">エージェントを検索</span>}
           </button>
         </div>
       </div>

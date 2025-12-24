@@ -524,22 +524,22 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
       </div>
 
       {/* ツールバー */}
-      <div className="px-6 py-3 border-b border-gray-100 bg-gray-50">
-        <div className="flex items-center gap-2">
+      <div className="px-6 py-2.5 border-b border-gray-100 bg-gray-50">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            <Upload className="w-4 h-4" />
-            ファイルアップロード
+            <Upload className="w-3.5 h-3.5" />
+            アップロード
           </button>
 
           <button
             onClick={() => setShowNewDirectoryInput(!showNewDirectoryInput)}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-md transition-colors"
+            className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
           >
-            <FolderPlus className="w-4 h-4" />
+            <FolderPlus className="w-3.5 h-3.5" />
             新規フォルダ
           </button>
 

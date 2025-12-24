@@ -219,9 +219,14 @@ export async function deleteFile(userId: string, filePath: string) {
 }
 
 /**
- * ディレクトリを削除（空のディレクトリのみ）
+ * ディレクトリを削除
+ * @param force true の場合、ディレクトリ内のすべてのオブジェクトを再帰的に削除
  */
-export async function deleteDirectory(userId: string, directoryPath: string) {
+export async function deleteDirectory(
+  userId: string,
+  directoryPath: string,
+  force: boolean = false
+) {
   const bucketName = config.userStorageBucketName;
   if (!bucketName) {
     throw new Error('USER_STORAGE_BUCKET_NAME is not configured');
@@ -230,7 +235,7 @@ export async function deleteDirectory(userId: string, directoryPath: string) {
   const normalizedPath = normalizePath(directoryPath);
   const prefix = `${getUserStoragePrefix(userId)}/${normalizedPath}/`;
 
-  console.log(`🗑️  Deleting directory: ${prefix}`);
+  console.log(`🗑️  Deleting directory: ${prefix} (force: ${force})`);
 
   // ディレクトリ内のオブジェクトを確認
   const listCommand = new ListObjectsV2Command({
@@ -253,11 +258,54 @@ export async function deleteDirectory(userId: string, directoryPath: string) {
 
     await s3Client.send(deleteCommand);
     console.log(`✅ Directory deleted: ${prefix}`);
-    return { deleted: true };
+    return { deleted: true, count: 1 };
   }
 
-  // ディレクトリが空でない場合はエラー
-  throw new Error('Directory is not empty');
+  // forceフラグがない場合は、空でないディレクトリは削除できない
+  if (!force) {
+    throw new Error('Directory is not empty');
+  }
+
+  // forceフラグがある場合は、すべてのオブジェクトを削除
+  let deletedCount = 0;
+  let continuationToken: string | undefined;
+
+  do {
+    // オブジェクト一覧を取得（ページネーション対応）
+    const listCmd = new ListObjectsV2Command({
+      Bucket: bucketName,
+      Prefix: prefix,
+      ContinuationToken: continuationToken,
+      MaxKeys: 1000, // S3 APIの最大値
+    });
+
+    const response = await s3Client.send(listCmd);
+
+    if (response.Contents && response.Contents.length > 0) {
+      // バッチ削除用のキーリストを作成
+      const objectsToDelete = response.Contents.map((obj) => ({ Key: obj.Key! }));
+
+      // DeleteObjectsCommandを使用して一括削除
+      const { DeleteObjectsCommand: BatchDeleteCommand } = await import('@aws-sdk/client-s3');
+      const deleteCmd = new BatchDeleteCommand({
+        Bucket: bucketName,
+        Delete: {
+          Objects: objectsToDelete,
+          Quiet: true,
+        },
+      });
+
+      await s3Client.send(deleteCmd);
+      deletedCount += objectsToDelete.length;
+      console.log(`🗑️  Deleted ${objectsToDelete.length} objects (total: ${deletedCount})`);
+    }
+
+    continuationToken = response.NextContinuationToken;
+  } while (continuationToken);
+
+  console.log(`✅ Directory and all contents deleted: ${prefix} (${deletedCount} objects)`);
+
+  return { deleted: true, count: deletedCount };
 }
 
 /**

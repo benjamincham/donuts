@@ -126,7 +126,8 @@ router.delete('/file', async (req: AuthenticatedRequest, res: Response) => {
 
 /**
  * DELETE /storage/directory
- * ディレクトリを削除（空のディレクトリのみ）
+ * ディレクトリを削除
+ * クエリパラメータ force=true で、ディレクトリ内のすべてのファイルを含めて削除
  */
 router.delete('/directory', async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -136,12 +137,13 @@ router.delete('/directory', async (req: AuthenticatedRequest, res: Response) => 
     }
 
     const path = req.query.path as string;
+    const force = req.query.force === 'true';
 
     if (!path) {
       return res.status(400).json({ error: 'Bad Request', message: 'path is required' });
     }
 
-    const result = await storageService.deleteDirectory(userId, path);
+    const result = await storageService.deleteDirectory(userId, path, force);
 
     res.status(200).json(result);
   } catch (error) {

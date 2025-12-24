@@ -152,11 +152,16 @@ export async function deleteFile(path: string) {
 }
 
 /**
- * ディレクトリを削除（空のディレクトリのみ）
+ * ディレクトリを削除
+ * @param path ディレクトリパス
+ * @param force true の場合、ディレクトリ内のすべてのファイルを含めて削除
  */
-export async function deleteDirectory(path: string) {
+export async function deleteDirectory(path: string, force: boolean = false) {
   const url = new URL(`${API_BASE_URL}/storage/directory`);
   url.searchParams.append('path', path);
+  if (force) {
+    url.searchParams.append('force', 'true');
+  }
 
   const headers = await createAuthHeaders();
 

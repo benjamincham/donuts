@@ -53,11 +53,15 @@ function StorageItemComponent({
 }: StorageItemComponentProps) {
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation(); // カードのクリックイベントを止める
-    if (
-      window.confirm(
-        `${item.type === 'directory' ? 'ディレクトリ' : 'ファイル'} "${item.name}" を削除しますか？`
-      )
-    ) {
+
+    let confirmMessage: string;
+    if (item.type === 'directory') {
+      confirmMessage = `ディレクトリ "${item.name}" を削除しますか？\n\n⚠️ ディレクトリ内のすべてのファイルとサブフォルダも削除されます。`;
+    } else {
+      confirmMessage = `ファイル "${item.name}" を削除しますか？`;
+    }
+
+    if (window.confirm(confirmMessage)) {
       onDelete(item);
     }
   };
@@ -280,13 +284,66 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
   // パンくずリスト作成
   const pathSegments = currentPath.split('/').filter(Boolean);
 
-  // ファイルアップロード
+  // ファイルアップロード（相対パスをサポート）
   const handleFileSelect = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
     for (let i = 0; i < files.length; i++) {
       await uploadFile(files[i]);
     }
+  };
+
+  // ファイルを相対パスでアップロード
+  const handleFileUploadWithPath = async (file: File, relativePath: string) => {
+    await uploadFile(file, relativePath);
+  };
+
+  // ディレクトリエントリから再帰的にファイルとディレクトリを取得
+  const readDirectoryEntry = async (
+    directoryEntry: FileSystemDirectoryEntry,
+    path: string = ''
+  ): Promise<{
+    files: Array<{ file: File; relativePath: string }>;
+    directories: string[];
+  }> => {
+    const files: Array<{ file: File; relativePath: string }> = [];
+    const directories: string[] = [];
+    const reader = directoryEntry.createReader();
+
+    const readEntries = (): Promise<FileSystemEntry[]> => {
+      return new Promise((resolve, reject) => {
+        reader.readEntries(resolve, reject);
+      });
+    };
+
+    const entries = await readEntries();
+
+    // エントリがない場合は空のディレクトリ
+    if (entries.length === 0) {
+      directories.push(path);
+      return { files, directories };
+    }
+
+    for (const entry of entries) {
+      if (entry.isFile) {
+        const fileEntry = entry as FileSystemFileEntry;
+        const file = await new Promise<File>((resolve, reject) => {
+          fileEntry.file(resolve, reject);
+        });
+        files.push({
+          file,
+          relativePath: path ? `${path}/${entry.name}` : entry.name,
+        });
+      } else if (entry.isDirectory) {
+        const dirEntry = entry as FileSystemDirectoryEntry;
+        const subPath = path ? `${path}/${entry.name}` : entry.name;
+        const result = await readDirectoryEntry(dirEntry, subPath);
+        files.push(...result.files);
+        directories.push(...result.directories);
+      }
+    }
+
+    return { files, directories };
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -312,8 +369,62 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
     e.preventDefault();
     setIsDragOver(false);
 
-    const files = e.dataTransfer.files;
-    await handleFileSelect(files);
+    const items = e.dataTransfer.items;
+
+    if (!items) {
+      // フォールバック: 通常のファイルリスト
+      const files = e.dataTransfer.files;
+      await handleFileSelect(files);
+      return;
+    }
+
+    // DataTransferItemを使用してフォルダを処理
+    const allFiles: Array<{ file: File; relativePath: string }> = [];
+    const allDirectories: string[] = [];
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.kind === 'file') {
+        const entry = item.webkitGetAsEntry();
+
+        if (entry) {
+          if (entry.isFile) {
+            // ファイルの場合
+            const fileEntry = entry as FileSystemFileEntry;
+            const file = await new Promise<File>((resolve, reject) => {
+              fileEntry.file(resolve, reject);
+            });
+            allFiles.push({ file, relativePath: file.name });
+          } else if (entry.isDirectory) {
+            // ディレクトリの場合、再帰的に読み取り
+            const dirEntry = entry as FileSystemDirectoryEntry;
+            const result = await readDirectoryEntry(dirEntry, entry.name);
+            allFiles.push(...result.files);
+            allDirectories.push(...result.directories);
+          }
+        }
+      }
+    }
+
+    // 空のディレクトリを先に作成
+    for (const dirPath of allDirectories) {
+      // dirPathの最後のセグメントをディレクトリ名として、親パスを計算
+      const pathParts = dirPath.split('/');
+      const dirName = pathParts[pathParts.length - 1];
+      const parentPath =
+        pathParts.length > 1
+          ? currentPath === '/'
+            ? `/${pathParts.slice(0, -1).join('/')}`
+            : `${currentPath}/${pathParts.slice(0, -1).join('/')}`
+          : currentPath;
+
+      await createDirectory(dirName, parentPath);
+    }
+
+    // すべてのファイルをアップロード
+    for (const { file, relativePath } of allFiles) {
+      await handleFileUploadWithPath(file, relativePath);
+    }
   };
 
   // ディレクトリ作成

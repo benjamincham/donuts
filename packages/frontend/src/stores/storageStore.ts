@@ -72,8 +72,28 @@ export const useStorageStore = create<StorageState>((set, get) => ({
   },
 
   // ファイルをアップロード
-  uploadFile: async (file: File, path?: string) => {
-    const targetPath = path ?? get().currentPath;
+  uploadFile: async (file: File, relativePathOrPath?: string) => {
+    // relativePathOrPathが相対パス（サブディレクトリ含む）の場合は、現在のパスと結合
+    // そうでない場合（絶対パス）は、そのまま使用
+    const currentPath = get().currentPath;
+    let targetPath: string;
+    let fileName: string;
+
+    if (relativePathOrPath && relativePathOrPath.includes('/')) {
+      // 相対パスが含まれている場合（例: "folder/file.txt"）
+      const pathParts = relativePathOrPath.split('/');
+      fileName = pathParts[pathParts.length - 1];
+      const dirPath = pathParts.slice(0, -1).join('/');
+      targetPath = currentPath === '/' ? `/${dirPath}` : `${currentPath}/${dirPath}`;
+    } else if (relativePathOrPath) {
+      // ファイル名のみ、または絶対パス
+      fileName = relativePathOrPath;
+      targetPath = currentPath;
+    } else {
+      // パスが指定されていない場合
+      fileName = file.name;
+      targetPath = currentPath;
+    }
 
     // ファイルサイズチェック（5MB制限）
     const maxSize = 5 * 1024 * 1024; // 5MB
@@ -90,11 +110,7 @@ export const useStorageStore = create<StorageState>((set, get) => ({
     try {
       // 署名付きURL取得
       set({ uploadProgress: 10 });
-      const uploadUrlResponse = await storageApi.generateUploadUrl(
-        file.name,
-        targetPath,
-        file.type
-      );
+      const uploadUrlResponse = await storageApi.generateUploadUrl(fileName, targetPath, file.type);
 
       // S3にアップロード
       set({ uploadProgress: 30 });
@@ -102,8 +118,8 @@ export const useStorageStore = create<StorageState>((set, get) => ({
 
       set({ uploadProgress: 90 });
 
-      // リストを再読み込み
-      await get().loadItems(targetPath);
+      // リストを再読み込み（現在のパスで）
+      await get().loadItems(currentPath);
 
       set({
         isUploading: false,
@@ -145,14 +161,15 @@ export const useStorageStore = create<StorageState>((set, get) => ({
   },
 
   // アイテムを削除
-  deleteItem: async (item: StorageItem) => {
+  deleteItem: async (item: StorageItem, force: boolean = true) => {
     set({ isLoading: true, error: null });
 
     try {
       if (item.type === 'file') {
         await storageApi.deleteFile(item.path);
       } else {
-        await storageApi.deleteDirectory(item.path);
+        // ディレクトリの場合は force=true で削除（中身も含めて削除）
+        await storageApi.deleteDirectory(item.path, force);
       }
 
       // リストを再読み込み

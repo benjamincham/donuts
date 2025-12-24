@@ -72,6 +72,12 @@ export interface AgentCoreRuntimeProps {
    * Web検索ツールを使用するために必要
    */
   readonly tavilyApiKey?: string;
+
+  /**
+   * User Storage バケット名（オプション）
+   * S3ストレージツールを使用するために必要
+   */
+  readonly userStorageBucketName?: string;
 }
 
 /**
@@ -146,6 +152,11 @@ export class AgentCoreRuntime extends Construct {
     // Tavily Search API Key の設定
     if (props.tavilyApiKey) {
       environmentVariables.TAVILY_API_KEY = props.tavilyApiKey;
+    }
+
+    // User Storage バケット名の設定
+    if (props.userStorageBucketName) {
+      environmentVariables.USER_STORAGE_BUCKET_NAME = props.userStorageBucketName;
     }
 
     // AgentCore Runtime を作成
@@ -252,7 +263,10 @@ export class AgentCoreRuntime extends Construct {
           'bedrock-agentcore:GetCodeInterpreterSession',
           'bedrock-agentcore:ListCodeInterpreterSessions',
         ],
-        resources: [`arn:aws:bedrock-agentcore:${region}:${account}:code-interpreter/*`],
+        resources: [
+          `arn:aws:bedrock-agentcore:${region}:${account}:code-interpreter/*`,
+          `arn:aws:bedrock-agentcore:${region}:aws:code-interpreter/*`, // AWSマネージドCode Interpreter
+        ],
       })
     );
 

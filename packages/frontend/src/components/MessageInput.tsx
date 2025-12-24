@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import { useChatStore } from '../stores/chatStore';
+import { StoragePathDisplay } from './StoragePathDisplay';
+import { StorageManagementModal } from './StorageManagementModal';
 
 interface MessageInputProps {
   getScenarioPrompt?: () => string | null;
@@ -9,7 +11,9 @@ interface MessageInputProps {
 export const MessageInput: React.FC<MessageInputProps> = ({ getScenarioPrompt }) => {
   const { sendPrompt, isLoading } = useChatStore();
   const [input, setInput] = useState('');
+  const [isStorageModalOpen, setIsStorageModalOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const prevLoadingRef = useRef(isLoading);
 
   // テキストエリアの自動リサイズ
   useEffect(() => {
@@ -19,6 +23,15 @@ export const MessageInput: React.FC<MessageInputProps> = ({ getScenarioPrompt })
       textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
     }
   }, [input]);
+
+  // ローディング完了時にフォーカスを戻す
+  useEffect(() => {
+    // ローディングが完了した時（true → false）にフォーカスを戻す
+    if (prevLoadingRef.current && !isLoading) {
+      textareaRef.current?.focus();
+    }
+    prevLoadingRef.current = isLoading;
+  }, [isLoading]);
 
   // シナリオプロンプトの自動入力
   useEffect(() => {
@@ -60,6 +73,9 @@ export const MessageInput: React.FC<MessageInputProps> = ({ getScenarioPrompt })
       // 入力フィールドを即座にクリア
       setInput('');
 
+      // 送信後にテキストエリアにフォーカスを戻す
+      textareaRef.current?.focus();
+
       // メッセージ送信（非同期で継続）
       await sendPrompt(messageToSend);
     } catch (err) {
@@ -77,6 +93,11 @@ export const MessageInput: React.FC<MessageInputProps> = ({ getScenarioPrompt })
 
   return (
     <div className="bg-white p-4">
+      {/* ストレージパス表示 */}
+      <div className="max-w-4xl mx-auto mb-2">
+        <StoragePathDisplay onClick={() => setIsStorageModalOpen(true)} />
+      </div>
+
       <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
         <div className="relative">
           {/* テキスト入力エリア */}
@@ -86,8 +107,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({ getScenarioPrompt })
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             placeholder="メッセージを入力してください..."
-            className="w-full px-4 py-3 pr-12 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-300 focus:border-transparent resize-none min-h-[52px] max-h-[200px] bg-white"
-            disabled={isLoading}
+            className="w-full px-4 py-3 pr-12 border border-gray-200 rounded-2xl focus:outline-none focus:ring-1 focus:ring-gray-200 focus:border-transparent resize-none min-h-[52px] max-h-[200px] bg-white"
             rows={1}
             style={{ height: 'auto' }}
           />
@@ -113,6 +133,12 @@ export const MessageInput: React.FC<MessageInputProps> = ({ getScenarioPrompt })
         {/* ヘルプテキスト */}
         <p className="mt-2 text-xs text-gray-500">Shift + Enter で改行、Enter で送信</p>
       </form>
+
+      {/* ストレージ管理モーダル */}
+      <StorageManagementModal
+        isOpen={isStorageModalOpen}
+        onClose={() => setIsStorageModalOpen(false)}
+      />
     </div>
   );
 };

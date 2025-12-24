@@ -5,6 +5,8 @@ import type { ChatState, Message, MessageContent, ToolUse, ToolResult } from '..
 import { streamAgentResponse } from '../api/agent';
 import type { ConversationMessage } from '../api/sessions';
 import { useAgentStore } from './agentStore';
+import { useStorageStore } from './storageStore';
+import { useSessionStore } from './sessionStore';
 
 // AWS AgentCore sessionId制約: [a-zA-Z0-9][a-zA-Z0-9-_]*
 // 英数字のみのカスタムnanoid（ハイフンとアンダースコアを除外）
@@ -127,16 +129,13 @@ export const useChatStore = create<ChatStore>()(
         const { addMessage, updateMessage } = get();
         let { sessionId } = get();
 
+        // 新規セッションかどうかを判定（セッション一覧更新に使用）
+        const isNewSession = !sessionId;
+
         // セッションIDがない場合は新しく生成（初回メッセージ送信時）
         if (!sessionId) {
           sessionId = generateSessionId();
           set({ sessionId });
-
-          // URL を更新して sessionId を反映
-          if (navigateFunction) {
-            console.log(`🆕 新しいセッションを作成: ${sessionId}`);
-            navigateFunction(`/chat/${sessionId}`, { replace: true });
-          }
         }
 
         try {
@@ -147,6 +146,12 @@ export const useChatStore = create<ChatStore>()(
             type: 'user',
             contents: stringToContents(prompt),
           });
+
+          // URL を更新して sessionId を反映（メッセージ追加後に遷移）
+          if (isNewSession && navigateFunction) {
+            console.log(`🆕 新しいセッションを作成: ${sessionId}`);
+            navigateFunction(`/chat/${sessionId}`, { replace: true });
+          }
 
           // アシスタントの応答メッセージを作成（ストリーミング用）
           const assistantMessageId = addMessage({
@@ -160,12 +165,19 @@ export const useChatStore = create<ChatStore>()(
 
           // 選択中のエージェント設定を取得
           const selectedAgent = useAgentStore.getState().selectedAgent;
+
+          // ストレージパスを取得
+          const currentPath = useStorageStore.getState().currentPath;
+
           const agentConfig = selectedAgent
             ? {
                 systemPrompt: selectedAgent.systemPrompt,
                 enabledTools: selectedAgent.enabledTools,
+                storagePath: currentPath,
               }
-            : undefined;
+            : {
+                storagePath: currentPath,
+              };
 
           // デバッグログ
           if (selectedAgent) {
@@ -174,6 +186,7 @@ export const useChatStore = create<ChatStore>()(
           } else {
             console.log(`🤖 デフォルトエージェント使用`);
           }
+          console.log(`📁 ストレージパス制限: ${currentPath}`);
 
           // ストリーミングレスポンスを処理
           await streamAgentResponse(
@@ -279,6 +292,12 @@ export const useChatStore = create<ChatStore>()(
 
                 set({ isLoading: false });
                 console.log(`✅ メッセージ送信完了 (セッション: ${sessionId})`);
+
+                // 新規セッションの場合、セッション一覧を更新
+                if (isNewSession) {
+                  console.log('🔄 新規セッション作成完了、セッション一覧を更新中...');
+                  useSessionStore.getState().refreshSessions();
+                }
               },
               onError: (error: Error) => {
                 // エラーメッセージで更新

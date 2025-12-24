@@ -7,6 +7,7 @@ import { AgentCoreRuntime } from './constructs/agentcore-runtime';
 import { BackendApi } from './constructs/backend-api';
 import { CognitoAuth } from './constructs/cognito-auth';
 import { Frontend } from './constructs/frontend';
+import { UserStorage } from './constructs/user-storage';
 
 export interface AgentCoreStackProps extends cdk.StackProps {
   /**
@@ -107,6 +108,11 @@ export class AgentCoreStack extends cdk.Stack {
    */
   public readonly memory: AgentCoreMemory;
 
+  /**
+   * 作成された User Storage
+   */
+  public readonly userStorage: UserStorage;
+
   constructor(scope: Construct, id: string, props?: AgentCoreStackProps) {
     super(scope, id, props);
 
@@ -198,7 +204,14 @@ export class AgentCoreStack extends cdk.Stack {
       },
     });
 
-    // 4. AgentCore Runtime の作成（開発用に一時的にワイルドカード設定）
+    // 4. User Storage の作成
+    this.userStorage = new UserStorage(this, 'UserStorage', {
+      bucketNamePrefix: gatewayName,
+      retentionDays: 365,
+      corsAllowedOrigins: ['*'], // 開発用、本番では具体的なオリジンを設定
+    });
+
+    // 5. AgentCore Runtime の作成（開発用に一時的にワイルドカード設定）
     this.agentRuntime = new AgentCoreRuntime(this, 'AgentCoreRuntime', {
       runtimeName: 'StrandsAgentsTS',
       description: 'TypeScript版Strands Agent Runtime',
@@ -212,12 +225,16 @@ export class AgentCoreStack extends cdk.Stack {
         enabled: true,
       },
       tavilyApiKey: props?.tavilyApiKey, // Tavily Search API Key を渡す
+      userStorageBucketName: this.userStorage.bucketName, // User Storage バケット名を渡す
     });
 
     // Runtime に Memory アクセス権限を付与
     this.memory.grantAgentCoreAccess(this.agentRuntime.runtime);
 
-    // 5. Backend API の作成（Lambda Web Adapter）
+    // Runtime に User Storage アクセス権限を付与
+    this.userStorage.grantFullAccess(this.agentRuntime.runtime);
+
+    // 6. Backend API の作成（Lambda Web Adapter）
     this.backendApi = new BackendApi(this, 'BackendApi', {
       apiName: `${gatewayName}-backend-api`,
       cognitoAuth: this.cognitoAuth,
@@ -226,9 +243,13 @@ export class AgentCoreStack extends cdk.Stack {
       corsAllowedOrigins: ['*'], // 開発用、本番では具体的なオリジンを設定
       timeout: 30, // API Gateway の制限
       memorySize: 1024, // Express アプリに十分なメモリ
+      userStorageBucketName: this.userStorage.bucketName, // User Storage バケット名を追加
     });
 
-    // 6. Frontend の作成
+    // Backend API に User Storage アクセス権限を付与
+    this.userStorage.grantFullAccess(this.backendApi.lambdaFunction);
+
+    // 7. Frontend の作成
     this.frontend = new Frontend(this, 'Frontend', {
       userPoolId: this.cognitoAuth.userPoolId,
       userPoolClientId: this.cognitoAuth.clientId,
@@ -237,7 +258,7 @@ export class AgentCoreStack extends cdk.Stack {
       backendApiUrl: this.backendApi.apiUrl, // Backend API URL を追加
     });
 
-    // 5. CloudFormation 追加出力（認証関連）
+    // 8. CloudFormation 追加出力（認証関連）
     new cdk.CfnOutput(this, 'GatewayMcpEndpoint', {
       value: `https://${this.gateway.gatewayId}.gateway.bedrock-agentcore.${this.region}.amazonaws.com/mcp`,
       description: 'AgentCore Gateway MCP Endpoint',
@@ -337,10 +358,29 @@ export class AgentCoreStack extends cdk.Stack {
       description: 'Backend API 設定サマリー',
     });
 
+    // User Storage 関連の出力
+    new cdk.CfnOutput(this, 'UserStorageBucketName', {
+      value: this.userStorage.bucketName,
+      description: 'User Storage S3 Bucket Name',
+      exportName: `${id}-UserStorageBucketName`,
+    });
+
+    new cdk.CfnOutput(this, 'UserStorageBucketArn', {
+      value: this.userStorage.bucketArn,
+      description: 'User Storage S3 Bucket ARN',
+      exportName: `${id}-UserStorageBucketArn`,
+    });
+
+    new cdk.CfnOutput(this, 'UserStorageConfiguration', {
+      value: `User Storage: ${this.userStorage.bucketName} - ユーザーファイルストレージ`,
+      description: 'User Storage 設定サマリー',
+    });
+
     // タグの追加
     cdk.Tags.of(this).add('Project', 'AgentCore');
     cdk.Tags.of(this).add('Component', 'Gateway');
     cdk.Tags.of(this).add('Memory', 'Enabled');
     cdk.Tags.of(this).add('BackendApi', 'Enabled');
+    cdk.Tags.of(this).add('UserStorage', 'Enabled');
   }
 }

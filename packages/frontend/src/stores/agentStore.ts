@@ -258,8 +258,13 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
       const selectedAgent = loadSelectedAgentFromStorage();
 
       // 選択されたAgentが削除されている場合は選択を解除
-      const validSelectedAgent =
+      let validSelectedAgent =
         selectedAgent && agents.some((a) => a.id === selectedAgent.id) ? selectedAgent : null;
+
+      // 未選択の場合はデフォルトで最初のAgent（汎用アシスタント）を選択
+      if (!validSelectedAgent && agents.length > 0) {
+        validSelectedAgent = agents[0];
+      }
 
       if (validSelectedAgent !== selectedAgent) {
         saveSelectedAgentToStorage(validSelectedAgent);

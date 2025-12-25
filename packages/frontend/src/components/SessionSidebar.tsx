@@ -16,6 +16,7 @@ import {
   LogOut,
   X,
   Settings,
+  CalendarRange,
 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useSessionStore } from '../stores/sessionStore';
@@ -295,6 +296,17 @@ export function SessionSidebar() {
           >
             <Bot className="w-5 h-5 flex-shrink-0" />
             {shouldShowExpanded && <span className="text-sm">エージェントを検索</span>}
+          </Link>
+
+          <Link
+            to="/events"
+            className={`p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2 no-underline ${
+              shouldShowExpanded ? 'w-full text-left' : 'w-auto'
+            }`}
+            title={!shouldShowExpanded ? 'イベント連携' : undefined}
+          >
+            <CalendarRange className="w-5 h-5 flex-shrink-0" />
+            {shouldShowExpanded && <span className="text-sm">イベント連携</span>}
           </Link>
         </div>
       </div>

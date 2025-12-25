@@ -19,6 +19,8 @@ interface StorageState {
   error: string | null;
   isUploading: boolean;
   uploadProgress: number;
+  uploadTotal: number;
+  uploadCompleted: number;
 
   // フォルダツリー関連
   folderTree: FolderNode[];
@@ -29,6 +31,7 @@ interface StorageState {
   setCurrentPath: (path: string) => void;
   loadItems: (path?: string) => Promise<void>;
   uploadFile: (file: File, path?: string) => Promise<void>;
+  uploadFiles: (files: Array<{ file: File; relativePath: string }>) => Promise<void>;
   createDirectory: (directoryName: string, path?: string) => Promise<void>;
   deleteItem: (item: StorageItem) => Promise<void>;
   refresh: () => Promise<void>;
@@ -70,6 +73,8 @@ export const useStorageStore = create<StorageState>((set, get) => ({
   error: null,
   isUploading: false,
   uploadProgress: 0,
+  uploadTotal: 0,
+  uploadCompleted: 0,
 
   // フォルダツリー初期状態
   folderTree: [],
@@ -109,74 +114,108 @@ export const useStorageStore = create<StorageState>((set, get) => ({
     }
   },
 
-  // ファイルをアップロード
+  // ファイルをアップロード（単一ファイル）
   uploadFile: async (file: File, relativePathOrPath?: string) => {
-    // relativePathOrPathが相対パス（サブディレクトリ含む）の場合は、現在のパスと結合
-    // そうでない場合（絶対パス）は、そのまま使用
+    // 単一ファイルのアップロードは uploadFiles を使用
+    const relativePath = relativePathOrPath || file.name;
+    await get().uploadFiles([{ file, relativePath }]);
+  },
+
+  // 複数ファイルをバッチアップロード
+  uploadFiles: async (files: Array<{ file: File; relativePath: string }>) => {
     const currentPath = get().currentPath;
-    let targetPath: string;
-    let fileName: string;
-
-    if (relativePathOrPath && relativePathOrPath.includes('/')) {
-      // 相対パスが含まれている場合（例: "folder/file.txt"）
-      const pathParts = relativePathOrPath.split('/');
-      fileName = pathParts[pathParts.length - 1];
-      const dirPath = pathParts.slice(0, -1).join('/');
-      targetPath = currentPath === '/' ? `/${dirPath}` : `${currentPath}/${dirPath}`;
-    } else if (relativePathOrPath) {
-      // ファイル名のみ、または絶対パス
-      fileName = relativePathOrPath;
-      targetPath = currentPath;
-    } else {
-      // パスが指定されていない場合
-      fileName = file.name;
-      targetPath = currentPath;
-    }
-
-    // ファイルサイズチェック（5MB制限）
     const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
+
+    // ファイルサイズチェック
+    const oversizedFiles = files.filter((f) => f.file.size > maxSize);
+    if (oversizedFiles.length > 0) {
       set({
-        error:
-          'ファイルサイズが5MBを超えています。Bedrock Converse APIの制限により、5MB以下のファイルをアップロードしてください。',
+        error: `以下のファイルが5MBを超えています: ${oversizedFiles.map((f) => f.file.name).join(', ')}`,
       });
       return;
     }
 
-    set({ isUploading: true, uploadProgress: 0, error: null });
+    set({
+      isUploading: true,
+      uploadProgress: 0,
+      uploadTotal: files.length,
+      uploadCompleted: 0,
+      error: null,
+    });
+
+    let completed = 0;
+    const errors: string[] = [];
 
     try {
-      // 署名付きURL取得
-      set({ uploadProgress: 10 });
-      const uploadUrlResponse = await storageApi.generateUploadUrl(fileName, targetPath, file.type);
+      // 各ファイルを順次アップロード
+      for (const { file, relativePath } of files) {
+        try {
+          let targetPath: string;
+          let fileName: string;
 
-      // S3にアップロード
-      set({ uploadProgress: 30 });
-      await storageApi.uploadFileToS3(uploadUrlResponse.uploadUrl, file);
+          if (relativePath.includes('/')) {
+            // 相対パスが含まれている場合
+            const pathParts = relativePath.split('/');
+            fileName = pathParts[pathParts.length - 1];
+            const dirPath = pathParts.slice(0, -1).join('/');
+            targetPath = currentPath === '/' ? `/${dirPath}` : `${currentPath}/${dirPath}`;
+          } else {
+            // ファイル名のみ
+            fileName = relativePath;
+            targetPath = currentPath;
+          }
 
-      set({ uploadProgress: 90 });
+          // 署名付きURL取得
+          const uploadUrlResponse = await storageApi.generateUploadUrl(
+            fileName,
+            targetPath,
+            file.type
+          );
 
-      // リストを再読み込み（現在のパスで）
+          // S3にアップロード
+          await storageApi.uploadFileToS3(uploadUrlResponse.uploadUrl, file);
+
+          completed++;
+          set({
+            uploadCompleted: completed,
+            uploadProgress: Math.round((completed / files.length) * 100),
+          });
+        } catch (error) {
+          console.error(`Failed to upload file ${file.name}:`, error);
+          errors.push(`${file.name}: ${error instanceof Error ? error.message : '不明なエラー'}`);
+        }
+      }
+
+      // 全ファイルのアップロード完了後、1回だけリストとツリーを更新
       await get().loadItems(currentPath);
-
-      // 新しいディレクトリが作成された可能性があるのでツリーも更新
       await get().loadFolderTree();
 
       set({
         isUploading: false,
         uploadProgress: 100,
+        uploadTotal: 0,
+        uploadCompleted: 0,
       });
+
+      // エラーがあれば表示
+      if (errors.length > 0) {
+        set({
+          error: `一部のファイルのアップロードに失敗しました:\n${errors.join('\n')}`,
+        });
+      }
 
       // プログレスをリセット
       setTimeout(() => {
         set({ uploadProgress: 0 });
       }, 1000);
     } catch (error) {
-      console.error('Failed to upload file:', error);
+      console.error('Failed to upload files:', error);
       set({
         error: error instanceof Error ? error.message : 'ファイルのアップロードに失敗しました',
         isUploading: false,
         uploadProgress: 0,
+        uploadTotal: 0,
+        uploadCompleted: 0,
       });
     }
   },

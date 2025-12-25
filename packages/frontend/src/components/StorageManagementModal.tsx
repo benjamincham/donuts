@@ -185,11 +185,13 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
     error,
     isUploading,
     uploadProgress,
+    uploadTotal,
+    uploadCompleted,
     folderTree,
     isTreeLoading,
     expandedFolders,
     loadItems,
-    uploadFile,
+    uploadFiles,
     createDirectory,
     deleteItem,
     clearError,
@@ -317,18 +319,19 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
   // パンくずリスト作成
   const pathSegments = currentPath.split('/').filter(Boolean);
 
-  // ファイルアップロード（相対パスをサポート）
+  // ファイルアップロード（バッチ処理）
   const handleFileSelect = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
+    const fileArray: Array<{ file: File; relativePath: string }> = [];
     for (let i = 0; i < files.length; i++) {
-      await uploadFile(files[i]);
+      fileArray.push({
+        file: files[i],
+        relativePath: files[i].name,
+      });
     }
-  };
 
-  // ファイルを相対パスでアップロード
-  const handleFileUploadWithPath = async (file: File, relativePath: string) => {
-    await uploadFile(file, relativePath);
+    await uploadFiles(fileArray);
   };
 
   // ディレクトリエントリから再帰的にファイルとディレクトリを取得
@@ -454,9 +457,9 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
       await createDirectory(dirName, parentPath);
     }
 
-    // すべてのファイルをアップロード
-    for (const { file, relativePath } of allFiles) {
-      await handleFileUploadWithPath(file, relativePath);
+    // すべてのファイルをバッチアップロード
+    if (allFiles.length > 0) {
+      await uploadFiles(allFiles);
     }
   };
 
@@ -673,7 +676,10 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
         {isUploading && (
           <div className="mt-3">
             <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
-              <span>アップロード中...</span>
+              <span>
+                アップロード中...
+                {uploadTotal > 0 && ` (${uploadCompleted}/${uploadTotal})`}
+              </span>
               <span>{uploadProgress}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">

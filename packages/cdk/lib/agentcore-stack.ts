@@ -148,7 +148,7 @@ export class AgentCoreStack extends cdk.Stack {
     // Utility Tools Lambda Target の作成
     this.echoToolTarget = new AgentCoreLambdaTarget(this, 'EchoToolTarget', {
       targetName: 'utility-tools',
-      description: 'Utility ツール（Echo/Ping等）を提供するLambda関数',
+      description: 'Utility ツールを提供するLambda関数',
       lambdaCodePath: 'packages/lambda-tools/tools/utility-tools',
       toolSchemaPath: 'packages/lambda-tools/tools/utility-tools/tool-schema.json',
       timeout: 30,

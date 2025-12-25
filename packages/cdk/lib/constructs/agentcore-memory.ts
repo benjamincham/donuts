@@ -183,8 +183,7 @@ export class AgentCoreMemory extends Construct {
   private createExecutionRole(memoryName: string): iam.Role {
     const executionRole = new iam.Role(this, 'ExecutionRole', {
       assumedBy: new iam.ServicePrincipal('bedrock-agentcore.amazonaws.com'),
-      description: `Execution role for AgentCore Memory: ${memoryName}`,
-      roleName: `AgentCoreMemory-${memoryName}-ExecutionRole`,
+      description: `Execution role for AgentCore Memory: ${memoryName} in ${cdk.Stack.of(this).region}`,
     });
 
     // CloudWatch Logs 権限を追加

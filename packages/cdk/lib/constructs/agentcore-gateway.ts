@@ -112,7 +112,7 @@ export class AgentCoreGateway extends Construct {
         break;
 
       case 'cognito':
-      default:
+      default: {
         // 外部で作成されたCognito認証を使用
         if (!props.cognitoAuth) {
           throw new Error('Cognito認証を使用する場合、cognitoAuthが必要です');
@@ -124,6 +124,7 @@ export class AgentCoreGateway extends Construct {
           allowedClients: jwtConfig.allowedClients,
         });
         break;
+      }
     }
 
     // Gateway作成（L2 Constructがセキュアなロールを内部で作成）

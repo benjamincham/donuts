@@ -55,6 +55,8 @@ export class Frontend extends Construct {
       this,
       'FrontendResponseHeadersPolicy',
       {
+        responseHeadersPolicyName: `agentcore-security-headers-${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}`,
+        comment: 'Security headers policy for AgentCore Frontend',
         // Security headers
         securityHeadersBehavior: {
           contentTypeOptions: { override: true },
@@ -82,7 +84,7 @@ export class Frontend extends Construct {
 
     // Cache Policy for static assets (JS, CSS, fonts, images)
     const staticAssetsCachePolicy = new cloudfront.CachePolicy(this, 'StaticAssetsCachePolicy', {
-      cachePolicyName: `agentcore-static-assets-${cdk.Aws.REGION}`,
+      cachePolicyName: `agentcore-static-assets-${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}`,
       comment: 'Cache policy for static assets with long TTL',
       defaultTtl: cdk.Duration.days(365),
       maxTtl: cdk.Duration.days(365),
@@ -94,13 +96,24 @@ export class Frontend extends Construct {
       cookieBehavior: cloudfront.CacheCookieBehavior.none(),
     });
 
+    // Origin Access Control (OAC) を明示的に作成
+    const originAccessControl = new cloudfront.S3OriginAccessControl(this, 'FrontendOAC', {
+      originAccessControlName: `agentcore-frontend-oac-${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}`,
+      signing: cloudfront.Signing.SIGV4_NO_OVERRIDE,
+    });
+
+    // S3 Origin with explicit OAC
+    const s3Origin = origins.S3BucketOrigin.withOriginAccessControl(this.s3Bucket, {
+      originAccessControl: originAccessControl,
+    });
+
     // CloudFront Distribution
     this.cloudFrontDistribution = new cloudfront.Distribution(
       this,
       'AgentCoreCloudFrontDistribution',
       {
         defaultBehavior: {
-          origin: origins.S3BucketOrigin.withOriginAccessControl(this.s3Bucket),
+          origin: s3Origin,
           viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
           cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
           responseHeadersPolicy: responseHeadersPolicy,
@@ -109,7 +122,7 @@ export class Frontend extends Construct {
         // Static assets behavior (JS, CSS, fonts, images) with aggressive caching
         additionalBehaviors: {
           '/assets/*': {
-            origin: origins.S3BucketOrigin.withOriginAccessControl(this.s3Bucket),
+            origin: s3Origin,
             viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
             cachePolicy: staticAssetsCachePolicy,
             responseHeadersPolicy: responseHeadersPolicy,
@@ -156,19 +169,15 @@ export class Frontend extends Construct {
       distribution: this.cloudFrontDistribution,
     });
 
-    // NodejsBuild の grantPrincipal に CloudWatch Logs への権限を追加
-    const cloudWatchPolicy = new iam.PolicyStatement({
-      effect: iam.Effect.ALLOW,
+    // NodejsBuild に CloudWatch Logs への権限を追加
+    iam.Grant.addToPrincipal({
+      grantee: frontendBuild,
       actions: ['logs:CreateLogGroup', 'logs:CreateLogStream', 'logs:PutLogEvents'],
-      resources: [
+      resourceArns: [
         `arn:aws:logs:${cdk.Aws.REGION}:${cdk.Aws.ACCOUNT_ID}:log-group:/aws/codebuild/*`,
+        `arn:aws:logs:${cdk.Aws.REGION}:${cdk.Aws.ACCOUNT_ID}:log-group:/aws/codebuild/*:*`,
       ],
     });
-
-    // 権限を NodejsBuild のサービスロールに追加
-    if (frontendBuild.grantPrincipal) {
-      (frontendBuild.grantPrincipal as iam.IRole).addToPrincipalPolicy(cloudWatchPolicy);
-    }
 
     // Set website URL for easy access
     this.websiteUrl = `https://${this.cloudFrontDistribution.distributionDomainName}`;

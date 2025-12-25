@@ -292,110 +292,14 @@ npm run frontend:dev
 ### CDK デプロイ
 
 ```bash
-# CDK の初回デプロイ
+# デフォルトリージョンにデプロイ（AWS CLI の設定に依存）
 npm run deploy
+
+# 東京リージョン (ap-northeast-1) にデプロイ
+npm run deploy:tokyo
+
+# 任意のリージョンにデプロイ
+AWS_REGION=eu-west-1 AWS_DEFAULT_REGION=eu-west-1 CDK_DEFAULT_REGION=eu-west-1 npm run deploy
 ```
 
-### デプロイ後の設定
-
-デプロイ完了後、出力された情報を使って環境変数を更新：
-
-```bash
-# CLI で AWS に接続
-# packages/client/.env
-AGENTCORE_RUNTIME_ARN=arn:aws:bedrock-agentcore:us-east-1:ACCOUNT_ID:runtime/YOUR_RUNTIME_ID
-
-# Frontend で AWS に接続
-# packages/frontend/.env  
-VITE_AGENT_ENDPOINT=https://your-gateway-id.bedrock-agentcore.us-east-1.amazonaws.com/invocations
-```
-
-## 🛠️ 開発コマンド
-
-### 環境セットアップ
-
-```bash
-npm run setup-env              # CloudFormation から環境変数を自動取得
-STACK_NAME=CustomStack npm run setup-env  # カスタムスタック名を指定
-```
-
-### 統合開発コマンド
-
-```bash
-npm run dev                    # 全サービス起動 (Frontend + Backend + Agent)
-npm run dev:frontend           # Frontend のみ起動 (setup-env 含む)
-npm run dev:backend            # Backend のみ起動 (setup-env 含む)
-npm run dev:agent              # Agent のみ起動 (setup-env 含む)
-```
-
-### Agent 関連
-
-```bash
-npm run agent:dev              # Agent 開発サーバー起動
-npm run agent:docker           # Docker で起動
-npm run agent:docker:detach    # Docker バックグラウンド起動
-npm run agent:docker:stop      # Docker 停止
-```
-
-### Backend 関連
-
-```bash
-npm run backend:dev            # Backend 開発サーバー起動
-npm run backend:build          # ビルド
-npm run backend:start          # ビルド後に起動
-npm run backend:docker         # Docker で起動
-npm run backend:docker:detach  # Docker バックグラウンド起動
-npm run backend:docker:stop    # Docker 停止
-```
-
-### Frontend 関連
-
-```bash
-npm run frontend:dev           # 開発サーバー起動
-npm run frontend:build         # ビルド
-npm run frontend:preview       # プレビュー
-```
-
-### CLI 関連
-
-```bash
-npm run client:dev             # CLI 開発モード
-npm run client:dev -- invoke "質問"  # 直接実行
-```
-
-### CDK 関連
-
-```bash
-npm run deploy                 # デプロイ
-npm run synth                  # テンプレート生成
-npm run diff                   # 差分確認
-```
-
-## 🔧 技術仕様
-
-### 使用技術
-
-| 分野 | 技術 |
-|------|------|
-| **Runtime** | AWS Bedrock AgentCore Runtime |
-| **AI Model** | Claude 4.5 Sonnet (グローバル推論プロファイル) |
-| **Agent Framework** | Strands Agents SDK |
-| **Frontend** | React 19 + Vite + Tailwind CSS |
-| **Authentication** | Amazon Cognito User Pool (JWT) |
-| **API Gateway** | AgentCore Gateway |
-| **Infrastructure** | AWS CDK (TypeScript) |
-| **CLI** | Commander.js + Chalk |
-
-### 環境設定
-
-```typescript
-// Agent 設定
-BEDROCK_MODEL_ID: "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
-PORT: 8080
-
-// Frontend 設定
-VITE_AGENT_ENDPOINT: "http://localhost:8080/invocations"
-
-// CLI 設定
-AGENTCORE_ENDPOINT: "http://localhost:8080"
-```
+**注意**: リージョンを指定する場合、`AWS_REGION`、`AWS_DEFAULT_REGION`、`CDK_DEFAULT_REGION` の3つの環境変数を設定する必要があります。

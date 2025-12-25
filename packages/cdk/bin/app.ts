@@ -11,5 +11,5 @@ new AgentCoreStack(app, 'AgentCoreStack', {
     region: process.env.CDK_DEFAULT_REGION,
   },
   tavilyApiKey: process.env.TAVILY_API_KEY,
-  description: 'Amazon Bedrock AgentCore Gateway',
+  description: 'Amazon Bedrock AgentCore Runtime, Gateway, Memory',
 });

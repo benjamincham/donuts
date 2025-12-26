@@ -224,6 +224,40 @@ SESSION MANAGEMENT - DETAILED BEHAVIOR:
 • For reliable multi-step workflows, combine operations in single executeCode block
 • Always verify variable existence before use
 
+PACKAGE AVAILABILITY WARNING:
+
+⚠️ Common packages that are NOT pre-installed and will cause ImportError:
+• seaborn (use matplotlib.pyplot instead for statistical plots)
+• scikit-learn (install via: pip install scikit-learn)
+• tensorflow / pytorch (install via: pip install tensorflow or pip install torch)
+• plotly / altair (install via: pip install plotly or pip install altair)
+
+✓ How to install additional packages:
+{
+  "action": "executeCommand",
+  "sessionName": "your-session",
+  "command": "pip install seaborn scikit-learn"
+}
+
+✓ Alternative visualization approaches (without seaborn):
+• Histograms: plt.hist(data, bins=20)
+• Bar charts: plt.bar(categories, values)
+• Scatter plots: plt.scatter(x, y)
+• Box plots: plt.boxplot(data)
+• Heatmaps: plt.imshow(data, cmap='viridis'); plt.colorbar()
+
+Example - Creating statistical plots with matplotlib only:
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Distribution plot (seaborn alternative)
+plt.figure(figsize=(10, 6))
+plt.hist(data, bins=30, alpha=0.7, edgecolor='black')
+plt.xlabel('Value')
+plt.ylabel('Frequency')
+plt.title('Distribution Plot')
+plt.savefig('/tmp/ws/distribution.png')
+
 RECOMMENDED PATTERNS:
 
 ✓ BEST: Single executeCode block for related operations

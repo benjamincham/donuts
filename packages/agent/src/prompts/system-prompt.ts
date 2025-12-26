@@ -52,12 +52,31 @@ When you create or edit files:
 3. No need to manually use S3 upload tools - changes sync automatically
 4. When using execute_command, you don't need to specify workingDirectory
 
-### S3 Tools (Optional)
-You can still use S3 tools for specific operations:
-- s3_list_files: List files in "${options.storagePath}"
-- s3_get_presigned_urls: Get temporary download URLs
-
 The workspace sync handles most file operations automatically, making your workflow seamless.`;
+
+    // S3ツールの利用可否をチェック
+    const hasS3ListFiles = options.tools.some((tool) => tool.name === 's3_list_files');
+    const hasS3GetPresignedUrls = options.tools.some(
+      (tool) => tool.name === 's3_get_presigned_urls'
+    );
+
+    // S3ツールが利用可能な場合のみセクションを追加
+    if (hasS3ListFiles || hasS3GetPresignedUrls) {
+      basePrompt += `
+
+### S3 Tools (Optional)
+You can still use S3 tools for specific operations:`;
+
+      if (hasS3ListFiles) {
+        basePrompt += `
+- s3_list_files: List files in "${options.storagePath}"`;
+      }
+
+      if (hasS3GetPresignedUrls) {
+        basePrompt += `
+- s3_get_presigned_urls: Get temporary download URLs`;
+      }
+    }
   }
 
   // デフォルトコンテキストを付与

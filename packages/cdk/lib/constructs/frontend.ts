@@ -167,6 +167,7 @@ export class Frontend extends Construct {
       outputSourceDirectory: 'dist',
       destinationBucket: this.s3Bucket,
       distribution: this.cloudFrontDistribution,
+      nodejsVersion: 22,
     });
 
     // NodejsBuild に CloudWatch Logs への権限を追加

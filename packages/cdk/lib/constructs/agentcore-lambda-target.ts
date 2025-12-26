@@ -103,7 +103,7 @@ export class AgentCoreLambdaTarget extends Construct {
     // Lambda 関数を作成
     this.lambdaFunction = new nodejs.NodejsFunction(this, 'Function', {
       functionName: `agentcore-${props.targetName}-function`,
-      runtime: props.runtime || lambda.Runtime.NODEJS_20_X,
+      runtime: props.runtime || lambda.Runtime.NODEJS_22_X,
       entry: path.join(props.lambdaCodePath, 'src', 'handler.ts'),
       handler: 'handler',
       timeout: props.timeout ? cdk.Duration.seconds(props.timeout) : cdk.Duration.seconds(30),
@@ -117,7 +117,7 @@ export class AgentCoreLambdaTarget extends Construct {
         minify: true,
         sourceMap: true,
         target: 'es2022',
-        externalModules: ['aws-sdk'],
+        externalModules: ['aws-sdk', '@aws-sdk/client-bedrock-agent-runtime'],
       },
     });
 

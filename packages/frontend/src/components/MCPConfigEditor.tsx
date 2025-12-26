@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertCircle, CheckCircle, Loader2, ChevronDown } from 'lucide-react';
 import type { MCPConfig } from '../types/agent';
@@ -87,6 +87,22 @@ export const MCPConfigEditor: React.FC<MCPConfigEditorProps> = ({
   const [isFetchingTools, setIsFetchingTools] = useState(false);
   const [toolsPreview, setToolsPreview] = useState<MCPToolPreview[]>([]);
   const [showSampleDropdown, setShowSampleDropdown] = useState(false);
+  const [messageIndex, setMessageIndex] = useState(0);
+
+  // ローテーションメッセージ用のuseEffect
+  useEffect(() => {
+    if (!isFetchingTools) {
+      setMessageIndex(0);
+      return;
+    }
+
+    const messages = t('tool.mcp.fetchingMessages', { returnObjects: true }) as string[];
+    const interval = setInterval(() => {
+      setMessageIndex((prev) => (prev + 1) % messages.length);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isFetchingTools, t]);
 
   // JSON テキストを変更
   const handleTextChange = (text: string) => {
@@ -225,7 +241,13 @@ export const MCPConfigEditor: React.FC<MCPConfigEditorProps> = ({
           {isFetchingTools ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>{t('tool.mcp.fetching')}</span>
+              <span>
+                {
+                  (t('tool.mcp.fetchingMessages', { returnObjects: true }) as string[])[
+                    messageIndex
+                  ]
+                }
+              </span>
             </>
           ) : (
             <span>{t('tool.mcp.previewTools')}</span>

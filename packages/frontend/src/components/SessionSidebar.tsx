@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Donut,
@@ -31,17 +31,15 @@ import type { SessionSummary } from '../api/sessions';
 interface SessionItemProps {
   session: SessionSummary;
   isActive: boolean;
-  onSelect: () => void;
   isNew?: boolean;
 }
 
-function SessionItem({ session, isActive, onSelect, isNew = false }: SessionItemProps) {
+function SessionItem({ session, isActive, isNew = false }: SessionItemProps) {
   const { t } = useTranslation();
 
   return (
     <Link
       to={`/chat/${session.sessionId}`}
-      onClick={onSelect}
       className={`
         block w-full text-left p-2 rounded-lg transition-all duration-200 group no-underline
         ${isActive ? 'bg-gray-100' : 'hover:bg-gray-100'}
@@ -75,7 +73,6 @@ function SessionItem({ session, isActive, onSelect, isNew = false }: SessionItem
  */
 export function SessionSidebar() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   const { user, logout } = useAuthStore();
   const {
@@ -132,16 +129,13 @@ export function SessionSidebar() {
   }, [sessions]);
 
   // 新規チャット開始
-  const handleNewChat = () => {
+  const handleNewChat = (e: React.MouseEvent) => {
+    // Cmd/Ctrl+クリックまたは中クリック時は別タブで開くだけなので、状態変更しない
+    if (e.metaKey || e.ctrlKey || e.button === 1) {
+      return;
+    }
     console.log('🆕 新規チャット開始');
     clearActiveSession();
-    navigate('/chat');
-  };
-
-  // セッション選択
-  const handleSessionSelect = (session: SessionSummary) => {
-    console.log(`📋 セッション選択: ${session.sessionId}`);
-    navigate(`/chat/${session.sessionId}`);
   };
 
   // サイドバー折りたたみ
@@ -339,7 +333,6 @@ export function SessionSidebar() {
                   key={session.sessionId}
                   session={session}
                   isActive={session.sessionId === activeSessionId}
-                  onSelect={() => handleSessionSelect(session)}
                   isNew={newSessionIds.has(session.sessionId)}
                 />
               ))}

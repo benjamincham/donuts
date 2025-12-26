@@ -25,7 +25,7 @@ new AgentCoreStack(app, stackName, {
     region: envConfig.awsRegion,
   },
   envConfig: envConfig,
-  tavilyApiKey: process.env.TAVILY_API_KEY,
+  tavilyApiKeySecretName: envConfig.tavilyApiKeySecretName,
   description: `Amazon Bedrock AgentCore - ${envName.toUpperCase()} environment`,
   terminationProtection: envConfig.deletionProtection,
 });

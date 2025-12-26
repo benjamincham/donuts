@@ -91,6 +91,12 @@ export interface EnvironmentConfig {
    * Backend API name
    */
   backendApiName?: string;
+
+  /**
+   * Tavily API Key Secret Name (Secrets Manager)
+   * Set for production/staging environments to retrieve API key from Secrets Manager
+   */
+  tavilyApiKeySecretName?: string;
 }
 
 /**
@@ -112,6 +118,7 @@ export const environments: Record<Environment, EnvironmentConfig> = {
     frontendBucketPrefix: 'agentcore-app',
     userStorageBucketPrefix: 'agentcore-app',
     backendApiName: 'agentcore-app-backend-api',
+    tavilyApiKeySecretName: 'agentcore/default/tavily-api-key',
   },
 
   dev: {
@@ -129,6 +136,7 @@ export const environments: Record<Environment, EnvironmentConfig> = {
     frontendBucketPrefix: 'agentcore-app-dev',
     userStorageBucketPrefix: 'agentcore-app-dev',
     backendApiName: 'agentcore-app-dev-backend-api',
+    tavilyApiKeySecretName: 'agentcore/dev/tavily-api-key',
   },
 
   stg: {
@@ -146,6 +154,7 @@ export const environments: Record<Environment, EnvironmentConfig> = {
     frontendBucketPrefix: 'agentcore-app-stg',
     userStorageBucketPrefix: 'agentcore-app-stg',
     backendApiName: 'agentcore-app-stg-backend-api',
+    tavilyApiKeySecretName: 'agentcore/stg/tavily-api-key',
   },
 
   prd: {
@@ -163,6 +172,7 @@ export const environments: Record<Environment, EnvironmentConfig> = {
     frontendBucketPrefix: 'agentcore-app-prd',
     userStorageBucketPrefix: 'agentcore-app-prd',
     backendApiName: 'agentcore-app-prd-backend-api',
+    tavilyApiKeySecretName: 'agentcore/prd/tavily-api-key',
   },
 };
 

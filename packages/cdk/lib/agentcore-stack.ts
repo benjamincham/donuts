@@ -67,10 +67,10 @@ export interface AgentCoreStackProps extends cdk.StackProps {
   readonly memoryExpirationDays?: number;
 
   /**
-   * Tavily Search API Key (optional)
-   * Required to use web search tools
+   * Tavily API Key Secret Name (Secrets Manager) (optional)
+   * When set, runtime will retrieve API key from Secrets Manager
    */
-  readonly tavilyApiKey?: string;
+  readonly tavilyApiKeySecretName?: string;
 }
 
 /**
@@ -256,7 +256,7 @@ export class AgentCoreStack extends cdk.Stack {
         memoryId: this.memory.memoryId,
         enabled: true,
       },
-      tavilyApiKey: props?.tavilyApiKey, // Pass Tavily Search API Key
+      tavilyApiKeySecretName: props?.tavilyApiKeySecretName, // Pass Tavily API Key Secret Name
       userStorageBucketName: this.userStorage.bucketName, // Pass User Storage bucket name
     });
 

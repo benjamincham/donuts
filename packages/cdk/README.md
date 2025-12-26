@@ -26,6 +26,38 @@ packages/cdk/
 
 ## 🚀 デプロイ方法
 
+### 事前準備: Tavily API キーの設定
+
+すべての環境で AWS Secrets Manager を使用して Tavily API キーを管理します：
+
+```bash
+# デフォルト環境用
+aws secretsmanager create-secret \
+  --name "agentcore/default/tavily-api-key" \
+  --secret-string "tvly-your-api-key-here" \
+  --region ap-northeast-1
+
+# 開発環境用
+aws secretsmanager create-secret \
+  --name "agentcore/dev/tavily-api-key" \
+  --secret-string "tvly-your-api-key-here" \
+  --region ap-northeast-1
+
+# ステージング環境用
+aws secretsmanager create-secret \
+  --name "agentcore/stg/tavily-api-key" \
+  --secret-string "tvly-your-api-key-here" \
+  --region ap-northeast-1
+
+# 本番環境用
+aws secretsmanager create-secret \
+  --name "agentcore/prd/tavily-api-key" \
+  --secret-string "tvly-your-api-key-here" \
+  --region ap-northeast-1
+```
+
+> **Note**: ローカル開発時は `packages/agent/.env` に `TAVILY_API_KEY` を設定することでフォールバックとして使用できますが、デプロイ環境では Secrets Manager のみを使用します。
+
 ### 開発環境へのデプロイ
 
 ```bash
@@ -80,6 +112,7 @@ npm run diff:prd
 | S3削除ポリシー | DESTROY | RETAIN | RETAIN |
 | CORS | `*` | 限定URL | 限定URL |
 | ログ保持期間 | 7日 | 14日 | 30日 |
+| Tavily API キー | Secrets Manager | Secrets Manager | Secrets Manager |
 
 ### カスタム設定の追加
 
@@ -202,6 +235,23 @@ npx -w packages/cdk cdk bootstrap
 ### リージョンが正しくない
 
 `config/environments.ts` で対象リージョンを確認してください。
+
+### Tavily API キーの確認
+
+Secrets Manager に正しく設定されているか確認:
+
+```bash
+# シークレット値の確認
+aws secretsmanager get-secret-value \
+  --secret-id "agentcore/prd/tavily-api-key" \
+  --query SecretString \
+  --output text
+
+# シークレットの更新
+aws secretsmanager update-secret \
+  --secret-id "agentcore/prd/tavily-api-key" \
+  --secret-string "tvly-new-api-key"
+```
 
 ## 📚 関連ドキュメント
 

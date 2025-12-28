@@ -11,6 +11,8 @@ import { TypingIndicator } from './TypingIndicator';
 import { ToolUseBlock } from './ToolUseBlock';
 import { ToolResultBlock } from './ToolResultBlock';
 import { MermaidDiagram } from './MermaidDiagram';
+import { S3FileLink } from './S3FileLink';
+import { S3Image } from './S3Image';
 
 interface MessageProps {
   message: MessageType;
@@ -25,9 +27,36 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
     (content) => content.type === 'toolUse' || content.type === 'toolResult'
   );
 
+  // Check if a path is an S3 storage path (user relative path)
+  const isStoragePath = (href: string): boolean => {
+    return href.startsWith('/') && !href.startsWith('//') && !href.startsWith('/api/');
+  };
+
   // Markdownカスタムコンポーネント（メモ化で参照を安定させる）
   const markdownComponents = useMemo(
     () => ({
+      // Custom link renderer for S3 files
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      a: ({ href, children, ...props }: any) => {
+        if (href && isStoragePath(href)) {
+          return <S3FileLink path={href}>{children}</S3FileLink>;
+        }
+        // Regular link
+        return (
+          <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+            {children}
+          </a>
+        );
+      },
+      // Custom image renderer for S3 images
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      img: ({ src, alt, ...props }: any) => {
+        if (src && isStoragePath(src)) {
+          return <S3Image path={src} alt={alt || ''} className="max-w-full rounded-lg" />;
+        }
+        // Regular image
+        return <img src={src} alt={alt} {...props} />;
+      },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       code: ({ inline, className, children, ...props }: any) => {
         const match = /language-(\w+)/.exec(className || '');

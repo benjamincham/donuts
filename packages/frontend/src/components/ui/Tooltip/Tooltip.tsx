@@ -54,7 +54,7 @@ export function Tooltip({
 
   // マウスエンター時に遅延してツールチップを表示
   const handleMouseEnter = () => {
-    timeoutRef.current = setTimeout(() => {
+    timeoutRef.current = window.setTimeout(() => {
       setIsVisible(true);
     }, delay);
   };

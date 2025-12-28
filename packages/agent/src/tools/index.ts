@@ -5,7 +5,6 @@ export { tavilyCrawlTool } from './tavily-crawl.js';
 export { createStrandsToolFromMCP, convertMCPToolsToStrands } from './mcp-converter.js';
 export { codeInterpreterTool } from './code-interpreter/index.js';
 export { s3ListFilesTool } from './s3-list-files.js';
-export { s3GetPresignedUrlsTool } from './s3-get-presigned-urls.js';
 export { fileEditorTool } from './file-editor.js';
 
 // ローカルツール配列のインポート
@@ -15,7 +14,6 @@ import { tavilyExtractTool } from './tavily-extract.js';
 import { tavilyCrawlTool } from './tavily-crawl.js';
 import { codeInterpreterTool } from './code-interpreter/index.js';
 import { s3ListFilesTool } from './s3-list-files.js';
-import { s3GetPresignedUrlsTool } from './s3-get-presigned-urls.js';
 import { fileEditorTool } from './file-editor.js';
 
 /**
@@ -29,6 +27,5 @@ export const localTools = [
   tavilyCrawlTool,
   codeInterpreterTool,
   s3ListFilesTool,
-  s3GetPresignedUrlsTool,
   fileEditorTool,
 ];

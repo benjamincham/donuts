@@ -52,30 +52,43 @@ When you create or edit files:
 3. No need to manually use S3 upload tools - changes sync automatically
 4. When using execute_command, you don't need to specify workingDirectory
 
-The workspace sync handles most file operations automatically, making your workflow seamless.`;
+The workspace sync handles most file operations automatically, making your workflow seamless.
+
+### Displaying S3 Storage Files
+When referencing files in the user's S3 storage in your responses, ALWAYS use relative path format starting with "/":
+
+**For images** (will be displayed automatically):
+\`\`\`markdown
+![Image Description](/path/to/image.png)
+\`\`\`
+
+**For other files** (clickable download links):
+\`\`\`markdown
+[File Name](/path/to/document.pdf)
+\`\`\`
+
+**IMPORTANT**:
+- ❌ DO NOT generate presigned URLs or full S3 URLs like "https://bucket.s3.amazonaws.com/..."
+- ❌ DO NOT use fake or placeholder URLs
+- ✅ ALWAYS use relative paths starting with "/" (e.g., "/plots/chart.png")
+- ✅ The frontend will automatically generate secure download URLs when needed
+
+**Examples**:
+- Images: \`![Chart](/reports/chart.png)\`
+- PDFs: \`[Report](/documents/report.pdf)\`
+- Any file: \`[Data](/data/results.csv)\`
+`;
 
     // S3ツールの利用可否をチェック
     const hasS3ListFiles = options.tools.some((tool) => tool.name === 's3_list_files');
-    const hasS3GetPresignedUrls = options.tools.some(
-      (tool) => tool.name === 's3_get_presigned_urls'
-    );
 
     // S3ツールが利用可能な場合のみセクションを追加
-    if (hasS3ListFiles || hasS3GetPresignedUrls) {
+    if (hasS3ListFiles) {
       basePrompt += `
 
 ### S3 Tools (Optional)
-You can still use S3 tools for specific operations:`;
-
-      if (hasS3ListFiles) {
-        basePrompt += `
+You can still use S3 tools for specific operations:
 - s3_list_files: List files in "${options.storagePath}"`;
-      }
-
-      if (hasS3GetPresignedUrls) {
-        basePrompt += `
-- s3_get_presigned_urls: Get temporary download URLs`;
-      }
     }
   }
 

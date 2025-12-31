@@ -4,29 +4,31 @@ import { Donut, ArrowLeft, CheckCircle } from 'lucide-react';
 import { confirmResetPassword } from '../../lib/cognito';
 
 interface ResetPasswordFormProps {
-  username: string;
+  email: string;
   onSuccess?: () => void;
   onBack?: () => void;
 }
 
-const resetPasswordSchema = z.object({
-  code: z.string().min(6, '確認コードは6桁以上必要です'),
-  newPassword: z
-    .string()
-    .min(8, 'パスワードは8文字以上必要です')
-    .regex(/[A-Z]/, 'パスワードには大文字を含む必要があります')
-    .regex(/[a-z]/, 'パスワードには小文字を含む必要があります')
-    .regex(/[0-9]/, 'パスワードには数字を含む必要があります'),
-  confirmPassword: z.string(),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: 'パスワードが一致しません',
-  path: ['confirmPassword'],
-});
+const resetPasswordSchema = z
+  .object({
+    code: z.string().min(6, '確認コードは6桁以上必要です'),
+    newPassword: z
+      .string()
+      .min(8, 'パスワードは8文字以上必要です')
+      .regex(/[A-Z]/, 'パスワードには大文字を含む必要があります')
+      .regex(/[a-z]/, 'パスワードには小文字を含む必要があります')
+      .regex(/[0-9]/, 'パスワードには数字を含む必要があります'),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'パスワードが一致しません',
+    path: ['confirmPassword'],
+  });
 
 type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
 export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
-  username,
+  email,
   onSuccess,
   onBack,
 }) => {
@@ -78,16 +80,16 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
     try {
       // バリデーション
       const validatedData = resetPasswordSchema.parse(formData);
-      
+
       setIsLoading(true);
       setError(null);
 
       // パスワードリセット実行
-      await confirmResetPassword(username, validatedData.code, validatedData.newPassword);
-      
+      await confirmResetPassword(email, validatedData.code, validatedData.newPassword);
+
       // 成功表示
       setIsSuccess(true);
-      
+
       // 2秒後にログイン画面へ
       setTimeout(() => {
         if (onSuccess) {
@@ -124,11 +126,7 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
           <h2 className="text-3xl font-bold text-gray-900 mb-2">パスワードをリセットしました</h2>
           <p className="text-gray-600">新しいパスワードでログインしてください</p>
           <div className="flex justify-center">
-            <svg
-              className="animate-spin h-8 w-8 text-amber-600"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
+            <svg className="animate-spin h-8 w-8 text-amber-600" fill="none" viewBox="0 0 24 24">
               <circle
                 className="opacity-25"
                 cx="12"
@@ -162,7 +160,7 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
             メールに送信された確認コードと新しいパスワードを入力してください
           </p>
           <p className="text-gray-600 text-sm mt-2">
-            ユーザー名: <span className="font-semibold">{username}</span>
+            メールアドレス: <span className="font-semibold">{email}</span>
           </p>
         </div>
 
@@ -215,7 +213,10 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 パスワード確認
               </label>
               <input

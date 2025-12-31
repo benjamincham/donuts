@@ -11,7 +11,7 @@ export const AuthContainer: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { needsConfirmation, pendingUsername, setNeedsConfirmation } = useAuthStore();
-  const [resetPasswordUsername, setResetPasswordUsername] = useState<string>('');
+  const [resetPasswordEmail, setResetPasswordEmail] = useState<string>('');
 
   // 確認が必要な場合は /confirm へリダイレクト
   useEffect(() => {
@@ -39,8 +39,8 @@ export const AuthContainer: React.FC = () => {
     navigate('/forgot-password');
   };
 
-  const handleForgotPasswordCodeSent = (username: string) => {
-    setResetPasswordUsername(username);
+  const handleForgotPasswordCodeSent = (email: string) => {
+    setResetPasswordEmail(email);
     navigate('/reset-password');
   };
 
@@ -54,14 +54,14 @@ export const AuthContainer: React.FC = () => {
 
   return (
     <Routes>
-      <Route 
-        path="/login" 
+      <Route
+        path="/login"
         element={
-          <LoginForm 
+          <LoginForm
             onSwitchToSignUp={handleSwitchToSignUp}
             onSwitchToForgotPassword={handleSwitchToForgotPassword}
           />
-        } 
+        }
       />
       <Route path="/signup" element={<SignUpForm onSwitchToLogin={handleSwitchToLogin} />} />
       <Route
@@ -87,7 +87,7 @@ export const AuthContainer: React.FC = () => {
         path="/reset-password"
         element={
           <ResetPasswordForm
-            username={resetPasswordUsername}
+            email={resetPasswordEmail}
             onSuccess={handleResetPasswordSuccess}
             onBack={handleResetPasswordBack}
           />

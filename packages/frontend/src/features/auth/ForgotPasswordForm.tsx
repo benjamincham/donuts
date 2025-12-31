@@ -5,29 +5,29 @@ import { forgotPassword } from '../../lib/cognito';
 
 interface ForgotPasswordFormProps {
   onSwitchToLogin?: () => void;
-  onCodeSent?: (username: string) => void;
+  onCodeSent?: (email: string) => void;
 }
 
-const usernameSchema = z.object({
-  username: z.string().min(1, 'ユーザー名を入力してください'),
+const emailSchema = z.object({
+  email: z.string().email('有効なメールアドレスを入力してください'),
 });
 
 export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
   onSwitchToLogin,
   onCodeSent,
 }) => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string>('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setUsername(value);
+    setEmail(value);
 
     // リアルタイムバリデーション
     try {
-      usernameSchema.shape.username.parse(value);
+      emailSchema.shape.email.parse(value);
       setValidationError('');
     } catch (err) {
       if (err instanceof ZodError && err.issues?.[0]?.message) {
@@ -45,17 +45,17 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
 
     try {
       // バリデーション
-      usernameSchema.parse({ username });
-      
+      emailSchema.parse({ email });
+
       setIsLoading(true);
       setError(null);
 
       // パスワードリセットコード送信
-      await forgotPassword(username);
-      
+      await forgotPassword(email);
+
       // 成功したら次の画面へ
       if (onCodeSent) {
-        onCodeSent(username);
+        onCodeSent(email);
       }
     } catch (err) {
       if (err instanceof ZodError && err.issues) {
@@ -88,25 +88,23 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-                ユーザー名
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                メールアドレス
               </label>
               <input
-                id="username"
-                name="username"
-                type="text"
-                autoComplete="username"
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
                 required
-                value={username}
+                value={email}
                 onChange={handleChange}
                 className={`input-field ${
                   validationError ? 'border-red-300 focus:ring-red-300' : ''
                 }`}
-                placeholder="ユーザー名を入力"
+                placeholder="example@email.com"
               />
-              {validationError && (
-                <p className="mt-2 text-sm text-red-600">{validationError}</p>
-              )}
+              {validationError && <p className="mt-2 text-sm text-red-600">{validationError}</p>}
             </div>
           </div>
 

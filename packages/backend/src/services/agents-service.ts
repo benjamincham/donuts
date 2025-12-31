@@ -12,7 +12,7 @@ import {
   UpdateItemCommand,
   AttributeValue,
 } from '@aws-sdk/client-dynamodb';
-import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
+import { marshall, unmarshall, NativeAttributeValue } from '@aws-sdk/util-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
 import { config } from '../config/index.js';
 
@@ -230,7 +230,7 @@ export class AgentsService {
       // 更新する属性を構築
       const updateExpressions: string[] = [];
       const expressionAttributeNames: Record<string, string> = {};
-      const expressionAttributeValues: Record<string, AttributeValue> = {};
+      const expressionAttributeValues: Record<string, NativeAttributeValue> = {};
 
       if (input.name !== undefined) {
         updateExpressions.push('#name = :name');

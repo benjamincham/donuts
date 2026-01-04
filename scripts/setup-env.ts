@@ -132,6 +132,12 @@ function createAgentEnv(outputs: StackOutputs): string {
 # AWS Region
 AWS_REGION=${outputs.Region || ''}
 
+# Bedrock Model Region
+BEDROCK_REGION=${outputs.Region || ''}
+
+# Nova Canvas Region (画像生成用)
+NOVA_CANVAS_REGION=us-east-1
+
 # AgentCore Memory
 AGENTCORE_MEMORY_ID=${outputs.MemoryId || ''}
 

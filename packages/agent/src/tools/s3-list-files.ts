@@ -4,7 +4,8 @@
 
 import { tool } from '@strands-agents/sdk';
 import { z } from 'zod';
-import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
+import { S3Client, ListObjectsV2Command, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { getCurrentContext, getCurrentStoragePath } from '../context/request-context.js';
 import { logger } from '../config/index.js';
 
@@ -71,12 +72,47 @@ function formatRelativeTime(date: Date): string {
 }
 
 /**
+ * Generate presigned URL for S3 object
+ */
+async function generatePresignedUrl(
+  bucketName: string,
+  key: string,
+  expiresIn: number
+): Promise<string> {
+  try {
+    const command = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+    });
+    const url = await getSignedUrl(s3Client, command, { expiresIn });
+    return url;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`[S3_LIST] Failed to generate presigned URL for ${key}: ${errorMessage}`);
+    throw error;
+  }
+}
+
+/**
+ * Format expiry time in human-readable format
+ */
+function formatExpiryTime(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+
+  if (hours > 0 && minutes > 0) return `${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''}`;
+  if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''}`;
+  return `${seconds} seconds`;
+}
+
+/**
  * S3 List Files Tool
  */
 export const s3ListFilesTool = tool({
   name: 's3_list_files',
   description:
-    'Retrieve a list of files and directories in user S3 storage. Can explore contents under the specified path.',
+    'Retrieve a list of files and directories in user S3 storage. Can explore contents under the specified path. Optionally generate presigned URLs for direct browser access.',
   inputSchema: z.object({
     path: z.string().default('/').describe('Directory path to list (default: root "/")'),
     recursive: z
@@ -89,9 +125,23 @@ export const s3ListFilesTool = tool({
       .max(1000)
       .default(100)
       .describe('Maximum number of results to retrieve (1-1000, default: 100)'),
+    includePresignedUrls: z
+      .boolean()
+      .default(false)
+      .describe(
+        'Whether to generate presigned URLs for files (default: false). URLs allow direct browser access and expire after specified time.'
+      ),
+    presignedUrlExpiry: z
+      .number()
+      .min(60)
+      .max(86400)
+      .default(3600)
+      .describe(
+        'Presigned URL expiration time in seconds (60-86400, default: 3600 = 1 hour). Only used when includePresignedUrls is true.'
+      ),
   }),
   callback: async (input) => {
-    const { path, recursive, maxResults } = input;
+    const { path, recursive, maxResults, includePresignedUrls, presignedUrlExpiry } = input;
 
     // Get user ID and storage path from request context
     const context = getCurrentContext();
@@ -147,6 +197,8 @@ export const s3ListFilesTool = tool({
         type: 'file' | 'directory';
         size?: number;
         lastModified?: Date;
+        s3Key?: string;
+        presignedUrl?: string;
       }> = [];
 
       if (recursive) {
@@ -174,6 +226,7 @@ export const s3ListFilesTool = tool({
                   type: content.Key.endsWith('/') ? 'directory' : 'file',
                   size: content.Size,
                   lastModified: content.LastModified,
+                  s3Key: content.Key,
                 });
                 totalFetched++;
 
@@ -222,10 +275,35 @@ export const s3ListFilesTool = tool({
                 type: 'file',
                 size: content.Size,
                 lastModified: content.LastModified,
+                s3Key: content.Key,
               });
             }
           }
         }
+      }
+
+      // Generate presigned URLs if requested
+      if (includePresignedUrls) {
+        logger.info(
+          `[S3_LIST] Generating presigned URLs for ${items.filter((i) => i.type === 'file').length} files (expiry: ${presignedUrlExpiry}s)`
+        );
+
+        for (const item of items) {
+          if (item.type === 'file' && item.s3Key) {
+            try {
+              item.presignedUrl = await generatePresignedUrl(
+                bucketName,
+                item.s3Key,
+                presignedUrlExpiry
+              );
+            } catch (error) {
+              logger.warn(`[S3_LIST] Skipping presigned URL for ${item.name}: ${error}`);
+              // Continue with other files even if one fails
+            }
+          }
+        }
+
+        logger.info('[S3_LIST] Presigned URL generation complete');
       }
 
       // Format results
@@ -236,7 +314,11 @@ export const s3ListFilesTool = tool({
       let output = `S3 Storage - File List\n`;
       output += `Path: ${path}\n`;
       output += `Mode: ${recursive ? 'Recursive' : 'Current directory only'}\n`;
-      output += `Total: ${items.length} items\n\n`;
+      output += `Total: ${items.length} items\n`;
+      if (includePresignedUrls) {
+        output += `Presigned URLs: Enabled (expires in ${formatExpiryTime(presignedUrlExpiry)})\n`;
+      }
+      output += `\n`;
 
       // Separate and sort directories and files
       const directories = items.filter((item) => item.type === 'directory');
@@ -263,6 +345,9 @@ export const s3ListFilesTool = tool({
           }
           if (file.lastModified) {
             output += `    Modified: ${formatRelativeTime(file.lastModified)} (${file.lastModified.toISOString()})\n`;
+          }
+          if (file.presignedUrl) {
+            output += `    URL: ${file.presignedUrl}\n`;
           }
         });
       }

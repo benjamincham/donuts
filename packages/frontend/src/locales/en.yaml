@@ -517,6 +517,58 @@ defaultAgents:
         title: 2D Ising Model Monte Carlo
         prompt: "Simulate the 2D Ising model using Metropolis algorithm:\n- Lattice size: 64×64\n- Coupling constant: J = 1\n- Temperature range: T = 0.5 to 4.0 in steps of 0.1\n- MC steps: 10,000 per temperature\n\nImplementation:\n1. Initialize random spin configuration\n2. Implement Metropolis algorithm with periodic boundary conditions\n3. Calculate magnetization M = ⟨|Σ sᵢ|⟩ for each temperature\n4. Calculate energy E = -J Σ sᵢsⱼ\n5. Calculate specific heat C = ∂E/∂T\n\nVisualize:\n1. Magnetization vs temperature showing phase transition\n2. Energy vs temperature\n3. Specific heat vs temperature (peak at critical temperature)\n4. Spin configurations at T < Tc (ordered) and T > Tc (disordered)\n\nIdentify and explain the ferromagnetic phase transition at Tc ≈ 2.269"
 
+  imageCreator:
+    name: Image Creator
+    description: Generate high-quality images from text using Amazon Nova Canvas
+    scenarios:
+      basicImage:
+        title: Basic Image Generation
+        prompt: "Please generate an image with the following:\n\nDescription: "
+      illustration:
+        title: Create Illustration
+        prompt: "Please create an illustration in the following style:\n\nTheme: \nStyle: (e.g., watercolor, digital art, anime style, etc.)\nColor scheme: \nOther requirements: "
+      background:
+        title: Background & Landscape
+        prompt: "Please create a background image for the following purpose:\n\nPurpose: (e.g., website, presentation, social media, etc.)\nScene: (e.g., mountain landscape, city nightscape, nature, etc.)\nSize: (512x512 / 768x768 / 1024x1024)\nMood: (e.g., calm, energetic, mysterious, etc.)"
+      icon:
+        title: Icon & Logo
+        prompt: "Please create an icon or logo with the following:\n\nSubject: \nStyle: (e.g., minimal, modern, hand-drawn, etc.)\nColor scheme: \nSize: 512x512\nOther requirements: "
+      productVisual:
+        title: Product Visual
+        prompt: "Please create a visual for the following product:\n\nProduct name: \nProduct features: \nTarget audience: \nDesired atmosphere: \nSize: (768x768 / 1024x1024)"
+      conceptArt:
+        title: Concept Art
+        prompt: "Please visualize the following concept:\n\nConcept: \nIdea to express: \nStyle: (e.g., futuristic, retro, fantasy, etc.)\nKey elements: \nSize: 1024x1024"
+
+  kamishibaiMaster:
+    name: Kamishibai Master
+    description: A specialist in creating Kamishibai (Japanese picture stories) that delight 3-year-olds - even preschool teachers bow to their expertise!
+    scenarios:
+      original:
+        title: Create Original Kamishibai
+        prompt: "Please create an original Kamishibai with the following details:\n\nTheme: \nTarget age: (2-3 years / 3-4 years / 4-5 years / 5-6 years)\nMessage: \nOther requests: \n\nWill create an 8-page story. Images are 1024x1024 square format."
+      animals:
+        title: Animal Story
+        prompt: "Please create a Kamishibai featuring animals:\n\nMain character animal: \nTarget age: (2-3 years / 3-4 years / 4-5 years / 5-6 years)\nStory theme: \nMessage to convey: \n\nWill create an 8-page story with warm, friendly illustrations."
+      seasons:
+        title: Seasonal Story
+        prompt: "Please create a Kamishibai about seasons or events:\n\nSeason/Event: (Spring / Summer / Fall / Winter / New Year / Hina Matsuri / Tanabata / Christmas, etc.)\nTarget age: (2-3 years / 3-4 years / 4-5 years / 5-6 years)\nLearning goal: \n\nWill create an 8-page story incorporating Japanese culture and seasonal elements."
+      lifeSkills:
+        title: Life Skills Story
+        prompt: "Please create a Kamishibai about daily life skills:\n\nTheme: (Brushing teeth / Washing hands / Cleaning up / Getting dressed / Using toilet / Greetings, etc.)\nTarget age: (2-3 years / 3-4 years / 4-5 years)\nKey points: \n\nWill create an 8-page story that teaches life skills in a fun way."
+      friendship:
+        title: Friendship Story
+        prompt: "Please create a Kamishibai about friendship and kindness:\n\nTheme: (Friendship / Kindness / Cooperation / Apology / Gratitude, etc.)\nTarget age: (3-4 years / 4-5 years / 5-6 years)\nCharacters: \n\nWill create an 8-page story that nurtures social and emotional development."
+      vehicles:
+        title: Vehicle Story
+        prompt: "Please create a Kamishibai about vehicles:\n\nVehicle: (Train / Bus / Car / Airplane / Ship / Fire truck / Police car, etc.)\nTarget age: (2-3 years / 3-4 years / 4-5 years)\nStory idea: \n\nWill create an exciting 8-page vehicle adventure."
+      folktale:
+        title: Folktale Adaptation
+        prompt: "Please create a modern adaptation of a Japanese folktale:\n\nOriginal folktale: (Momotaro / Urashima Taro / Kaguya Hime / Issun-boshi / Shitakiri Suzume, etc.)\nTarget age: 5-6 years\nAdaptation points: \n\nWill create an 8-page story with kanji and furigana (ruby)."
+      adventure:
+        title: Adventure Story
+        prompt: "Please create an adventure/exploration Kamishibai:\n\nAdventure setting: (Forest / Ocean / Mountain / Space / Wonderland, etc.)\nMain character: \nTarget age: (4-5 years / 5-6 years)\nGoal/Discovery: \n\nWill create an exciting 8-page adventure story."
+
   codeReview:
     name: Code Review Agent
     description: An agent specialized in code review and programming assistance

@@ -84,6 +84,13 @@ export interface AgentCoreRuntimeProps {
    * S3ストレージツールを使用するために必要
    */
   readonly userStorageBucketName?: string;
+
+  /**
+   * Nova Canvas のリージョン（オプション）
+   * 画像生成に使用する Amazon Nova Canvas モデルのリージョン
+   * デフォルト: us-east-1
+   */
+  readonly novaCanvasRegion?: string;
 }
 
 /**
@@ -168,6 +175,11 @@ export class AgentCoreRuntime extends Construct {
     // User Storage バケット名の設定
     if (props.userStorageBucketName) {
       environmentVariables.USER_STORAGE_BUCKET_NAME = props.userStorageBucketName;
+    }
+
+    // Nova Canvas リージョンの設定
+    if (props.novaCanvasRegion) {
+      environmentVariables.NOVA_CANVAS_REGION = props.novaCanvasRegion;
     }
 
     // AgentCore Runtime を作成

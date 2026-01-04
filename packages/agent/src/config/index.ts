@@ -19,6 +19,9 @@ const envSchema = z.object({
   BEDROCK_MODEL_ID: z.string().default('global.anthropic.claude-sonnet-4-5-20250929-v1:0'),
   BEDROCK_REGION: z.string().default('us-east-1'),
 
+  // Nova Canvas Configuration
+  NOVA_CANVAS_REGION: z.string().default('us-east-1'),
+
   // AgentCore Memory Configuration
   AGENTCORE_MEMORY_ID: z.string().optional(),
 

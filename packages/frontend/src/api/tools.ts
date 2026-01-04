@@ -443,6 +443,58 @@ export const LOCAL_TOOLS: MCPTool[] = [
       required: ['filePath', 'oldString', 'newString'],
     },
   },
+  {
+    name: 'nova_canvas',
+    description:
+      'Generate images using Amazon Nova Canvas on Bedrock. Convert text prompts into high-quality images with configurable size and seed for reproducibility. Automatically saves generated images to user S3 storage.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        prompt: {
+          type: 'string',
+          minLength: 1,
+          maxLength: 1024,
+          description:
+            'Text prompt describing the image to generate (required, max 1024 characters)',
+        },
+        width: {
+          type: 'number',
+          enum: [512, 768, 1024],
+          default: 512,
+          description: 'Image width in pixels (512, 768, or 1024, default: 512)',
+        },
+        height: {
+          type: 'number',
+          enum: [512, 768, 1024],
+          default: 512,
+          description: 'Image height in pixels (512, 768, or 1024, default: 512)',
+        },
+        numberOfImages: {
+          type: 'number',
+          minimum: 1,
+          maximum: 5,
+          default: 1,
+          description: 'Number of images to generate (1-5, default: 1)',
+        },
+        seed: {
+          type: 'number',
+          minimum: 0,
+          maximum: 858993459,
+          description: 'Random seed for reproducible generation (0-858993459, optional)',
+        },
+        saveToS3: {
+          type: 'boolean',
+          default: true,
+          description: 'Whether to save generated images to S3 storage (default: true)',
+        },
+        outputPath: {
+          type: 'string',
+          description: 'Custom output filename (default: auto-generated with timestamp)',
+        },
+      },
+      required: ['prompt'],
+    },
+  },
 ];
 
 /**

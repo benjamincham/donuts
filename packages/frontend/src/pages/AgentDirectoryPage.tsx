@@ -14,9 +14,7 @@ import { SharedAgentDetailModal } from '../components/SharedAgentDetailModal';
 import { LoadingIndicator } from '../components/ui/LoadingIndicator';
 import { PageHeader } from '../components/ui/PageHeader';
 import type { Agent } from '../types/agent';
-import { DEFAULT_AGENTS } from '../types/agent';
 import { translateIfKey } from '../utils/agent-translation';
-import { convertDefaultAgentsToAgents } from '../utils/default-agents';
 
 /**
  * Agent Directory ページメインコンポーネント
@@ -36,36 +34,28 @@ export function AgentDirectoryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [localSearchQuery, setLocalSearchQuery] = useState('');
 
-  // デフォルトエージェントを Agent 型に変換
-  const defaultAgents = useMemo(() => convertDefaultAgentsToAgents(DEFAULT_AGENTS), []);
-
-  // デフォルトエージェントと共有エージェントをマージ（デフォルトを先に表示）
-  const allAgents = useMemo(() => {
-    return [...defaultAgents, ...sharedAgents];
-  }, [defaultAgents, sharedAgents]);
-
   // 検索フィルタリング
   const filteredAgents = useMemo(() => {
     if (!localSearchQuery.trim()) {
-      return allAgents;
+      return sharedAgents;
     }
 
     const query = localSearchQuery.toLowerCase();
-    return allAgents.filter((agent) => {
+    return sharedAgents.filter((agent) => {
       const name = translateIfKey(agent.name, t).toLowerCase();
       const description = translateIfKey(agent.description, t).toLowerCase();
       return name.includes(query) || description.includes(query);
     });
-  }, [allAgents, localSearchQuery, t]);
+  }, [sharedAgents, localSearchQuery, t]);
 
   // URLパラメータから選択されたエージェントを派生させる（useEffectではなくuseMemoを使用）
   const selectedAgent = useMemo(() => {
     const agentParam = searchParams.get('agent');
-    if (agentParam && allAgents.length > 0) {
-      return allAgents.find((a) => `${a.createdBy}-${a.id}` === agentParam) || null;
+    if (agentParam && sharedAgents.length > 0) {
+      return sharedAgents.find((a) => `${a.createdBy}-${a.id}` === agentParam) || null;
     }
     return null;
-  }, [searchParams, allAgents]);
+  }, [searchParams, sharedAgents]);
 
   // 初回ロード
   useEffect(() => {

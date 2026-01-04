@@ -8,6 +8,7 @@ import { useAgentStore } from './agentStore';
 import { useStorageStore } from './storageStore';
 import { useSessionStore } from './sessionStore';
 import { useMemoryStore } from './memoryStore';
+import { useSettingsStore } from './settingsStore';
 
 // ヘルパー関数: 文字列コンテンツをMessageContent配列に変換
 const stringToContents = (text: string): MessageContent[] => {
@@ -142,8 +143,12 @@ export const useChatStore = create<ChatStore>()(
           // 長期記憶設定を取得
           const { isMemoryEnabled } = useMemoryStore.getState();
 
+          // 選択中のモデルIDを取得
+          const { selectedModelId } = useSettingsStore.getState();
+
           const agentConfig = selectedAgent
             ? {
+                modelId: selectedModelId,
                 systemPrompt: selectedAgent.systemPrompt,
                 enabledTools: selectedAgent.enabledTools,
                 storagePath: currentPath,
@@ -151,6 +156,7 @@ export const useChatStore = create<ChatStore>()(
                 mcpConfig: selectedAgent.mcpConfig as Record<string, unknown> | undefined,
               }
             : {
+                modelId: selectedModelId,
                 storagePath: currentPath,
                 memoryEnabled: isMemoryEnabled,
               };

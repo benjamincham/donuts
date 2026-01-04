@@ -107,6 +107,107 @@ You can still use S3 tools for specific operations:
 
 When using the code_interpreter tool, follow these critical guidelines for reliable execution:
 
+### ⚠️ CRITICAL: Execution Environment Separation
+
+**Code Interpreter and AgentCore Runtime are COMPLETELY SEPARATE environments.**
+
+| Environment | Location | Accessible from Runtime? |
+|------------|----------|-------------------------|
+| Code Interpreter | /opt/amazon/genesis1p-tools/var | ❌ NO - Isolated environment |
+| AgentCore Runtime | /tmp/ws (your workspace) | ✅ YES - Your working directory |
+
+**Key Facts:**
+- Files created by \`executeCode\` or \`executeCommand\` exist ONLY in Code Interpreter environment
+- AgentCore Runtime CANNOT directly access Code Interpreter files
+- You MUST use \`downloadFiles\` action to transfer files to Runtime before referencing them
+
+**NEVER do these (causes hallucination/broken references):**
+- ❌ Return Code Interpreter file paths directly (e.g., "/opt/amazon/.../output.png")
+- ❌ Assume files are accessible in Runtime without downloading
+- ❌ Reference files that haven't been transferred via \`downloadFiles\`
+- ❌ Generate fake, placeholder, or presigned URLs
+
+**ALWAYS follow this pattern:**
+1. ✅ Create files in Code Interpreter (executeCode/executeCommand)
+2. ✅ Download files to Runtime (\`downloadFiles\` to /tmp/ws)
+3. ✅ Verify download success
+4. ✅ Return relative paths starting with "/" (e.g., /chart.png, /report.pdf)
+
+### Complete File Creation Workflow (MANDATORY)
+
+**Every file creation must follow these 3 steps:**
+
+**Step 1: Create file in Code Interpreter**
+\`\`\`json
+{
+  "action": "executeCode",
+  "sessionName": "data-analysis",
+  "language": "python",
+  "code": "import matplotlib.pyplot as plt\\nplt.plot([1,2,3])\\nplt.savefig('chart.png')"
+}
+\`\`\`
+
+**Step 2: Download to AgentCore Runtime (REQUIRED - DO NOT SKIP)**
+\`\`\`json
+{
+  "action": "downloadFiles",
+  "sessionName": "data-analysis",
+  "sourcePaths": ["chart.png"],
+  "destinationDir": "/tmp/ws"
+}
+\`\`\`
+
+**Step 3: Return correct path to user**
+\`\`\`markdown
+Here is your chart: ![Chart](/chart.png)
+\`\`\`
+
+⚠️ **Skipping Step 2 causes broken file references and hallucination!**
+
+### Common Mistakes - Learn from These Anti-Patterns
+
+❌ **WRONG: Returning Code Interpreter internal paths**
+\`\`\`
+"I created a chart at /opt/amazon/genesis1p-tools/var/sessions/abc/chart.png"
+\`\`\`
+→ User cannot access this path. File doesn't exist in Runtime.
+
+❌ **WRONG: Assuming file exists without download**
+\`\`\`python
+# In Code Interpreter
+plt.savefig('analysis.png')
+\`\`\`
+Then immediately: "Here is your analysis: ![Result](/analysis.png)"
+→ File wasn't downloaded to Runtime. Link is broken.
+
+❌ **WRONG: Including workspace path in user-facing references**
+\`\`\`
+"Your file is at /tmp/ws/report.pdf"
+\`\`\`
+→ Should be just "/report.pdf" for proper S3 integration
+
+✅ **CORRECT: Complete workflow**
+\`\`\`python
+# Step 1: Create
+plt.savefig('analysis.png')
+\`\`\`
+\`\`\`json
+// Step 2: Download
+{"action": "downloadFiles", "sourcePaths": ["analysis.png"], "destinationDir": "/tmp/ws"}
+\`\`\`
+"Here is your analysis: ![Result](/analysis.png)" // Step 3: Reference
+
+### Pre-Reference Checklist (Verify Before Responding)
+
+Before returning any file reference to the user, verify:
+- [ ] Did I create a file via executeCode/executeCommand?
+- [ ] Did I run \`downloadFiles\` to transfer it to /tmp/ws?
+- [ ] Did the download succeed? (Check tool response)
+- [ ] Am I using relative path with "/" prefix? (e.g., /file.png, not /tmp/ws/file.png)
+- [ ] Am I NOT using Code Interpreter internal paths?
+
+If you answer "No" to any of these, DO NOT reference the file yet.
+
 ### Session Management (CRITICAL)
 1. **Always create a session first** using \`initSession\` action with a descriptive sessionName
 2. **Reuse the same sessionName** for all related operations in a workflow

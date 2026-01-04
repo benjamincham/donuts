@@ -101,14 +101,6 @@ export async function deleteAgent(agentId: string): Promise<void> {
 }
 
 /**
- * Initialize default agents for new users
- */
-export async function initializeDefaultAgents(): Promise<Agent[]> {
-  const data = await backendPost<InitializeAgentsResponse>('/agents/initialize');
-  return data.agents.map(parseAgentDates);
-}
-
-/**
  * Toggle agent share status
  */
 export async function toggleShareAgent(agentId: string): Promise<Agent> {

@@ -494,6 +494,29 @@ defaultAgents:
         title: Comparison & Analysis
         prompt: "Please compare and analyze the following options, including pros and cons:\n\nOptions:\n1. \n2. \n3. "
 
+  physicist:
+    name: Physicist
+    description: A theoretical physicist specializing in computational physics and simulations
+    scenarios:
+      dampedOscillator:
+        title: Damped Harmonic Oscillator Simulation
+        prompt: "Simulate a damped harmonic oscillator with the following parameters:\n- Mass: 1 kg\n- Spring constant: 100 N/m\n- Damping coefficients: γ = 0.5, 2.0, 5.0 s⁻¹ (underdamped, critically damped, overdamped)\n- Initial displacement: 1 m\n- Initial velocity: 0 m/s\n- Time span: 0 to 20 seconds\n\nCreate:\n1. Solution plots for all three damping cases on one figure\n2. Phase space plots (position vs velocity)\n3. Analysis comparing oscillation behavior, decay time, and energy dissipation\n\nExplain the physical significance of each damping regime."
+      quantumWavePacket:
+        title: Quantum Wave Packet Evolution
+        prompt: "Simulate the time evolution of a Gaussian wave packet in a free particle system:\n- Initial position: x₀ = 0\n- Initial width: σ = 1 (in dimensionless units)\n- Initial momentum: k₀ = 0 (at rest in k-space)\n- Time range: 0 to 5 (in dimensionless units)\n- Grid: -20 to 20 with 512 points\n\nImplementation steps:\n1. Solve the time-dependent Schrödinger equation using spectral methods\n2. Create 2D heatmap showing |ψ(x,t)|² evolution\n3. Create side-by-side plots of real and imaginary parts at t=0, 2.5, 5\n4. Plot the spreading of the wave packet over time\n\nAnalyze wave packet spreading and quantum dispersion effects."
+      electricField:
+        title: Electric Field Visualization
+        prompt: "Create electric field visualizations for a system with two point charges:\n- Charge 1: +2 μC at position (-1, 0)\n- Charge 2: -1 μC at position (+1, 0)\n- Grid range: -3 to +3 in both x and y\n\nGenerate:\n1. Vector field plot showing electric field directions and magnitudes\n2. Equipotential lines (contour plot of electric potential)\n3. Combined plot with vectors overlaid on equipotential contours\n4. Streamline plot showing field lines\n\nProvide analysis of:\n- Regions of strongest and weakest fields\n- Pattern differences between monopole and dipole configurations\n- Physical interpretation of equipotential lines"
+      lorenzSystem:
+        title: Lorenz System Chaos
+        prompt: "Solve and visualize the Lorenz system (classic chaos example):\ndy/dt = σ(y - x)\ndy/dt = x(ρ - z) - y\ndz/dt = xy - βz\n\nParameters: σ=10, ρ=28, β=8/3\n\nImplementation:\n1. Integrate using RK4 method from t=0 to t=100 with initial conditions (1, 1, 1)\n2. Create 3D trajectory plot of the Lorenz attractor\n3. Plot x(t), y(t), z(t) vs time\n4. Create phase plane projections (x-y, x-z, y-z)\n\nAnalyze:\n- Butterfly-like shape of the attractor\n- Sensitive dependence on initial conditions\n- Demonstrate chaos by integrating two nearby trajectories"
+      doublePendulum:
+        title: Double Pendulum Chaotic Motion
+        prompt: "Simulate a double pendulum system with equal masses and lengths:\n- Length of each arm: L = 1 m\n- Mass of each bob: m = 1 kg\n- Initial angles: θ₁ = π/2, θ₂ = π/2\n- Initial angular velocities: 0\n- Time span: 0 to 30 seconds\n\nImplementation:\n1. Derive and solve the coupled equations of motion using Lagrangian mechanics\n2. Animate the pendulum motion (create trajectory plot)\n3. Plot angular positions θ₁(t) and θ₂(t)\n4. Create phase plane plots for both angles\n5. Show energy conservation (kinetic + potential = constant)\n\nAnalyze chaotic transitions and sensitivity to initial conditions."
+      isingModel:
+        title: 2D Ising Model Monte Carlo
+        prompt: "Simulate the 2D Ising model using Metropolis algorithm:\n- Lattice size: 64×64\n- Coupling constant: J = 1\n- Temperature range: T = 0.5 to 4.0 in steps of 0.1\n- MC steps: 10,000 per temperature\n\nImplementation:\n1. Initialize random spin configuration\n2. Implement Metropolis algorithm with periodic boundary conditions\n3. Calculate magnetization M = ⟨|Σ sᵢ|⟩ for each temperature\n4. Calculate energy E = -J Σ sᵢsⱼ\n5. Calculate specific heat C = ∂E/∂T\n\nVisualize:\n1. Magnetization vs temperature showing phase transition\n2. Energy vs temperature\n3. Specific heat vs temperature (peak at critical temperature)\n4. Spin configurations at T < Tc (ordered) and T > Tc (disordered)\n\nIdentify and explain the ferromagnetic phase transition at Tc ≈ 2.269"
+
   codeReview:
     name: Code Review Agent
     description: An agent specialized in code review and programming assistance

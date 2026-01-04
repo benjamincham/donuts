@@ -5,6 +5,7 @@ import { useChatStore } from '../stores/chatStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { StoragePathDisplay } from './StoragePathDisplay';
 import { StorageManagementModal } from './StorageManagementModal';
+import { ModelSelector } from './ui/ModelSelector';
 
 interface MessageInputProps {
   sessionId: string | null;
@@ -132,26 +133,31 @@ export const MessageInput: React.FC<MessageInputProps> = ({
 
       <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
         <div className="relative">
-          {/* テキスト入力エリア */}
+          {/* テキスト入力エリア - 2行分のスペースを確保 */}
           <textarea
             ref={textareaRef}
             value={input}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             placeholder={t('chat.messageInputPlaceholder')}
-            className="w-full px-4 py-3 pr-12 border border-gray-200 rounded-2xl focus:outline-none focus:ring-1 focus:ring-gray-200 focus:border-transparent resize-none min-h-[52px] max-h-[200px] bg-white"
-            rows={1}
+            className="w-full px-4 py-3 pr-12 pb-12 border border-gray-200 rounded-2xl focus:outline-none focus:ring-1 focus:ring-gray-200 focus:border-transparent resize-none min-h-[72px] max-h-[200px] bg-white"
+            rows={2}
             style={{ height: 'auto' }}
           />
+
+          {/* モデルセレクター - 下部に配置 */}
+          <div className="absolute bottom-3 left-1.5 flex items-center">
+            <ModelSelector />
+          </div>
 
           {/* 送信ボタン */}
           <button
             type="submit"
             disabled={!input.trim() || isLoading}
-            className={`absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${
+            className={`absolute right-2 bottom-2 w-8 h-8 rounded-md flex items-center justify-center transition-all duration-200 ${
               !input.trim() || isLoading
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                : 'bg-gray-900 text-white hover:bg-gray-800'
+                ? 'text-gray-400 cursor-not-allowed'
+                : 'text-black hover:bg-gray-100'
             }`}
           >
             {isLoading ? (

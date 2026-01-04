@@ -9,7 +9,9 @@ stages:
 
 # Common template for Node.js jobs
 .node_template: &node_template
-  image: node:20
+  image: node:22
+  variables:
+    NODE_OPTIONS: '--max-old-space-size=4096'
   cache:
     key: npm-cache
     paths:

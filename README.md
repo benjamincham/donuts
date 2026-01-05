@@ -1,14 +1,45 @@
 # Fullstack AgentCore
 
+> [🇯🇵 日本語版 README はこちら / Japanese README](./README-ja.md)
+
 A full-stack AI agent system built with Amazon Bedrock AgentCore, providing a production-ready platform for deploying generative AI applications.
+
+## 🎯 Overview
+
+FullStack AgentCore is an enterprise-ready multi-agent platform that enables teams to create, customize, and share AI agents across your organization. Built on Amazon Bedrock, it provides 11+ specialized agents for various domains including software development, data analysis, content creation, and more.
+
+<div align="center">
+  <table>
+    <tr>
+      <td width="50%">
+        <img src="./docs/assets/agentchat.geeawa.net_chat.png" alt="Chat Interface" width="100%">
+        <p align="center"><b>Intuitive Chat Interface</b><br/>Interact with specialized AI agents through a clean, user-friendly interface</p>
+      </td>
+      <td width="50%">
+        <img src="./docs/assets/agentchat.geeawa.net_chat_share_agent.png" alt="Agent Sharing" width="100%">
+        <p align="center"><b>Organization-Wide Agent Sharing</b><br/>Discover and share AI agents across your team</p>
+      </td>
+    </tr>
+  </table>
+</div>
+
+### ✨ Key Highlights
+
+- **🤖 11+ Specialized Agents**: Software Developer, Data Analyst, Physicist, Content Creator, and more
+- **🔄 Agent Sharing**: Create custom agents and share them across your organization
+- **🛠️ Extensible Tools**: Execute commands, search the web, generate images, and integrate with external services
+- **💾 File Storage**: Built-in cloud storage for documents and resources
+- **🔐 Enterprise Ready**: JWT authentication, session management, and AWS Cognito integration
+- **📊 Memory & Context**: Persistent conversation history and context awareness
+
+## 🏗️ Architecture
+
+This project provides a complete stack for deploying AI agents powered by Amazon Bedrock.
 
 <div align="center">
   <img src="./docs/fullstack-agentcore-architecture.drawio.png" alt="Architecture Diagram" width="80%">
 </div>
 
-## 🏗️ Architecture
-
-This project provides a complete stack for deploying AI agents powered by Amazon Bedrock:
 
 | Component | Technology Stack | Port | Role | AWS Services |
 |-----------|-----------------|------|------|--------------|
@@ -18,6 +49,8 @@ This project provides a complete stack for deploying AI agents powered by Amazon
 | **CLI** | Commander.js | - | Command-line Interface | Cognito (JWT Auth) |
 | **CDK** | AWS CDK + TypeScript | - | Infrastructure as Code | CloudFormation |
 | **Lambda Tools** | AWS Lambda + MCP | - | AgentCore Gateway Tools | Lambda, Bedrock Knowledge Base |
+
+
 
 ## ✨ Key Features
 
@@ -99,6 +132,10 @@ After deployment, the CloudFormation stack outputs will include the Frontend URL
 
 ## 📖 Documentation
 
+### User Guides
+- [📘 User Guide (English)](docs/USER_GUIDE.md) - Feature introduction and end-user guide
+
+### Technical Documentation
 - [💻 Local Development Setup](docs/local-development-setup.md) - Environment setup automation
 - [🔐 JWT Authentication System](docs/jwt-authentication.md) - Authentication details
 - [📊 Architecture Diagram](docs/fullstack-agentcore-architecture.drawio.png)

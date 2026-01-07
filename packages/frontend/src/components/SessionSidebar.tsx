@@ -51,13 +51,13 @@ function SessionItem({ session, isActive, isNew = false }: SessionItemProps) {
       <div className="flex items-center gap-2">
         <span
           className={`
-          font-mono text-sm leading-tight truncate
+          text-sm leading-tight truncate
           ${
             isSubAgent
               ? 'text-gray-500'
               : isActive
-                ? 'text-gray-900'
-                : 'text-gray-900 group-hover:text-gray-700'
+                ? 'text-gray-700'
+                : 'text-gray-700 group-hover:text-gray-800'
           }
         `}
         >

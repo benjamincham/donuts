@@ -60,9 +60,6 @@ router.get('/', jwtAuthMiddleware, async (req: AuthenticatedRequest, res: Respon
         agentId: session.agentId,
         createdAt: session.createdAt,
         updatedAt: session.updatedAt,
-        // Include empty fields for compatibility with frontend
-        lastMessage: '',
-        messageCount: 0,
       })),
       metadata: {
         requestId: auth.requestId,

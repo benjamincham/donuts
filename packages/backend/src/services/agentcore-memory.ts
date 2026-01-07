@@ -55,8 +55,6 @@ interface RetrieveMemoryRecordsParams {
 export interface SessionSummary {
   sessionId: string;
   title: string; // Generated from first user message
-  lastMessage: string; // Last message
-  messageCount: number;
   createdAt: string; // ISO 8601 string
   updatedAt: string; // ISO 8601 string
 }
@@ -255,16 +253,6 @@ function parseBlobPayload(blob: Uint8Array | Buffer | unknown): BlobData | null 
 }
 
 /**
- * Extract first text from MessageContent array (for title generation)
- * @param contents Array of MessageContent
- * @returns First text string
- */
-function extractFirstText(contents: MessageContent[]): string {
-  const firstTextContent = contents.find((content) => content.type === 'text');
-  return firstTextContent && firstTextContent.type === 'text' ? firstTextContent.text : '';
-}
-
-/**
  * Long-term memory record type definition
  */
 export interface MemoryRecord {
@@ -385,8 +373,6 @@ export class AgentCoreMemoryService {
             .map((sessionSummary) => ({
               sessionId: sessionSummary.sessionId!,
               title: 'Session',
-              lastMessage: 'Select conversation to view history',
-              messageCount: 0,
               createdAt: sessionSummary.createdAt?.toISOString() || new Date().toISOString(),
               updatedAt: sessionSummary.createdAt?.toISOString() || new Date().toISOString(),
             }));
@@ -567,47 +553,6 @@ export class AgentCoreMemoryService {
       console.error('[AgentCoreMemoryService] Session event retrieval error:', error);
       throw error;
     }
-  }
-
-  /**
-   * Get session details (generate title and last message)
-   * @param actorId User ID
-   * @param sessionId Session ID
-   * @returns Session details
-   * @private
-   */
-  private async getSessionDetail(actorId: string, sessionId: string): Promise<SessionSummary> {
-    const messages = await this.getSessionEvents(actorId, sessionId);
-
-    // Generate title (use first user message)
-    let title = `Session ${sessionId.slice(0, 8)}...`;
-    const firstUserMessage = messages.find((m) => m.type === 'user');
-    if (firstUserMessage) {
-      const firstText = extractFirstText(firstUserMessage.contents);
-      // Truncate to maximum 50 characters
-      title = firstText.length > 50 ? `${firstText.slice(0, 50)}...` : firstText;
-    }
-
-    // Get last message
-    let lastMessage = 'Please start a conversation';
-    if (messages.length > 0) {
-      const lastMsg = messages[messages.length - 1];
-      const lastText = extractFirstText(lastMsg.contents);
-      lastMessage = lastText.length > 100 ? `${lastText.slice(0, 100)}...` : lastText;
-    }
-
-    // Creation and update timestamps
-    const createdAt = messages.length > 0 ? messages[0].timestamp : new Date().toISOString();
-    const updatedAt = messages.length > 0 ? messages[messages.length - 1].timestamp : createdAt;
-
-    return {
-      sessionId,
-      title,
-      lastMessage,
-      messageCount: messages.length,
-      createdAt,
-      updatedAt,
-    };
   }
 
   /**

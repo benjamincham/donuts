@@ -6,6 +6,7 @@
 import {
   BedrockAgentCoreClient,
   ListSessionsCommand,
+  ListSessionsCommandOutput,
   ListMemoryRecordsCommand,
   DeleteMemoryRecordCommand,
   RetrieveMemoryRecordsCommand,
@@ -57,6 +58,15 @@ export interface SessionSummary {
   messageCount: number;
   createdAt: string; // ISO 8601 string
   updatedAt: string; // ISO 8601 string
+}
+
+/**
+ * Session list result type definition (with pagination)
+ */
+export interface SessionListResult {
+  sessions: SessionSummary[];
+  nextToken?: string;
+  hasMore: boolean;
 }
 
 /**
@@ -345,50 +355,66 @@ export class AgentCoreMemoryService {
   }
 
   /**
-   * Get session list for specified actor
+   * Get session list for specified actor (fetch all sessions)
    * @param actorId User ID (JWT sub)
-   * @returns Session list
+   * @returns Session list result (all sessions, sorted by creation date descending)
    */
-  async listSessions(actorId: string): Promise<SessionSummary[]> {
+  async listSessions(actorId: string): Promise<SessionListResult> {
     try {
-      console.log(`[AgentCoreMemoryService] Retrieving session list: actorId=${actorId}`);
+      console.log(`[AgentCoreMemoryService] Retrieving all sessions: actorId=${actorId}`);
 
-      const command = new ListSessionsCommand({
-        memoryId: this.memoryId,
-        actorId: actorId,
-      });
+      const allSessions: SessionSummary[] = [];
+      let nextToken: string | undefined = undefined;
 
-      const response = await this.client.send(command);
+      // Fetch all pages
+      do {
+        const command = new ListSessionsCommand({
+          memoryId: this.memoryId,
+          actorId: actorId,
+          maxResults: 100, // Maximum allowed by API
+          nextToken: nextToken,
+        });
 
-      if (!response.sessionSummaries || response.sessionSummaries.length === 0) {
-        console.log(`[AgentCoreMemoryService] No sessions found: actorId=${actorId}`);
-        return [];
-      }
+        const response: ListSessionsCommandOutput = await this.client.send(command);
 
-      // Return session list in lightweight format (no detailed retrieval)
-      const sessions: SessionSummary[] = response.sessionSummaries
-        .filter((sessionSummary) => sessionSummary.sessionId)
-        .map((sessionSummary) => ({
-          sessionId: sessionSummary.sessionId!,
-          title: 'Session', // Fixed title
-          lastMessage: 'Select conversation to view history', // Fixed message
-          messageCount: 0, // 0 since no detailed retrieval
-          createdAt: sessionSummary.createdAt?.toISOString() || new Date().toISOString(),
-          updatedAt: sessionSummary.createdAt?.toISOString() || new Date().toISOString(),
-        }));
+        if (response.sessionSummaries && response.sessionSummaries.length > 0) {
+          // Add sessions from this page
+          const pageSessions = response.sessionSummaries
+            .filter((sessionSummary) => sessionSummary.sessionId)
+            .map((sessionSummary) => ({
+              sessionId: sessionSummary.sessionId!,
+              title: 'Session',
+              lastMessage: 'Select conversation to view history',
+              messageCount: 0,
+              createdAt: sessionSummary.createdAt?.toISOString() || new Date().toISOString(),
+              updatedAt: sessionSummary.createdAt?.toISOString() || new Date().toISOString(),
+            }));
 
-      // Sort by creation date in descending order (latest sessions first)
-      sessions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          allSessions.push(...pageSessions);
+        }
 
-      console.log(`[AgentCoreMemoryService] Retrieved ${sessions.length} sessions`);
-      return sessions;
+        nextToken = response.nextToken;
+      } while (nextToken);
+
+      // Sort by creation date (newest first)
+      allSessions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      console.log(`[AgentCoreMemoryService] Retrieved all ${allSessions.length} sessions`);
+
+      return {
+        sessions: allSessions,
+        hasMore: false, // All sessions fetched
+      };
     } catch (error) {
-      // Return empty array for new users where Actor doesn't exist
+      // Return empty result for new users where Actor doesn't exist
       if (error instanceof Error && error.name === 'ResourceNotFoundException') {
         console.log(
           `[AgentCoreMemoryService] Returning empty session list for new user: actorId=${actorId}`
         );
-        return [];
+        return {
+          sessions: [],
+          hasMore: false,
+        };
       }
       console.error('[AgentCoreMemoryService] Session list retrieval error:', error);
       throw error;

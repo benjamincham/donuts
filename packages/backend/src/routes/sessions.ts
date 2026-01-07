@@ -14,6 +14,7 @@ const router = Router();
  * Session list retrieval endpoint
  * GET /sessions
  * JWT authentication required - Use user ID as actorId
+ * Returns all sessions sorted by creation date (newest first)
  */
 router.get('/', jwtAuthMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -43,19 +44,21 @@ router.get('/', jwtAuthMiddleware, async (req: AuthenticatedRequest, res: Respon
     });
 
     const memoryService = createAgentCoreMemoryService();
-    const sessions = await memoryService.listSessions(actorId);
+    const result = await memoryService.listSessions(actorId);
 
     console.log(
-      `✅ Session list retrieval completed (${auth.requestId}): ${sessions.length} items`
+      `✅ Session list retrieval completed (${auth.requestId}): ${result.sessions.length} items, hasMore: ${result.hasMore}`
     );
 
     res.status(200).json({
-      sessions,
+      sessions: result.sessions,
       metadata: {
         requestId: auth.requestId,
         timestamp: new Date().toISOString(),
         actorId,
-        count: sessions.length,
+        count: result.sessions.length,
+        nextToken: result.nextToken,
+        hasMore: result.hasMore,
       },
     });
   } catch (error) {

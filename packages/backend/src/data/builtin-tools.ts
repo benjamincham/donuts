@@ -487,4 +487,63 @@ export const BUILTIN_TOOLS: MCPTool[] = [
       required: ['imagePath'],
     },
   },
+  {
+    name: 'call_agent',
+    description:
+      'Invoke specialized sub-agents asynchronously to handle specific tasks requiring different expertise. Use list_agents first to discover available agents, then start_task to invoke them. Sub-agents run independently with no shared history and can run for extended periods.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['list_agents', 'start_task', 'status'],
+          description:
+            "Action to perform: 'list_agents' to discover available agents, 'start_task' to start new task, 'status' to check task status",
+        },
+        agentId: {
+          type: 'string',
+          description:
+            'Agent ID to invoke (required for start_task). Use list_agents action first to discover available agent IDs.',
+        },
+        query: {
+          type: 'string',
+          description: 'Query or task to send to the agent (required for start_task)',
+        },
+        modelId: {
+          type: 'string',
+          description: 'Model ID to use for the sub-agent (optional, defaults to agent config)',
+        },
+        taskId: {
+          type: 'string',
+          description: 'Task ID to check (required for status action)',
+        },
+        waitForCompletion: {
+          type: 'boolean',
+          default: false,
+          description: 'Whether to wait for task completion with polling (default: false)',
+        },
+        pollingInterval: {
+          type: 'number',
+          default: 30,
+          description: 'Polling interval in seconds (default: 30)',
+        },
+        maxWaitTime: {
+          type: 'number',
+          default: 1200,
+          description: 'Maximum wait time in seconds (default: 1200 = 20 minutes)',
+        },
+        storagePath: {
+          type: 'string',
+          description:
+            "S3 storage path for the sub-agent workspace. If omitted, inherits the parent agent's storage path. Use this to share files between agents or specify a different workspace.",
+        },
+        sessionId: {
+          type: 'string',
+          description:
+            'Session ID for sub-agent conversation history. If not specified, auto-generated as "<33-char-alphanumeric>_subagent" (same format as regular user sessions).',
+        },
+      },
+      required: ['action'],
+    },
+  },
 ];

@@ -60,6 +60,15 @@ export interface SessionSummary {
 }
 
 /**
+ * Session list result type definition (with pagination)
+ */
+export interface SessionListResult {
+  sessions: SessionSummary[];
+  nextToken?: string;
+  hasMore: boolean;
+}
+
+/**
  * ToolUse type definition
  */
 export interface ToolUse {
@@ -347,22 +356,33 @@ export class AgentCoreMemoryService {
   /**
    * Get session list for specified actor (with pagination support)
    * @param actorId User ID (JWT sub)
-   * @returns Session list
+   * @param maxResults Maximum number of results to return (default: 50)
+   * @param nextToken Pagination token from previous response
+   * @returns Session list result with pagination info
    */
-  async listSessions(actorId: string): Promise<SessionSummary[]> {
+  async listSessions(
+    actorId: string,
+    maxResults: number = 50,
+    nextToken?: string
+  ): Promise<SessionListResult> {
     try {
       console.log(`[AgentCoreMemoryService] Retrieving session list: actorId=${actorId}`);
 
       const command = new ListSessionsCommand({
         memoryId: this.memoryId,
         actorId: actorId,
+        maxResults: maxResults,
+        nextToken: nextToken,
       });
 
       const response = await this.client.send(command);
 
       if (!response.sessionSummaries || response.sessionSummaries.length === 0) {
         console.log(`[AgentCoreMemoryService] No sessions found: actorId=${actorId}`);
-        return [];
+        return {
+          sessions: [],
+          hasMore: false,
+        };
       }
 
       // Return session list in lightweight format (no detailed retrieval)
@@ -380,14 +400,22 @@ export class AgentCoreMemoryService {
       sessions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       console.log(`[AgentCoreMemoryService] Retrieved ${sessions.length} sessions`);
-      return sessions;
+
+      return {
+        sessions,
+        nextToken: response.nextToken,
+        hasMore: !!response.nextToken,
+      };
     } catch (error) {
-      // Return empty array for new users where Actor doesn't exist
+      // Return empty result for new users where Actor doesn't exist
       if (error instanceof Error && error.name === 'ResourceNotFoundException') {
         console.log(
           `[AgentCoreMemoryService] Returning empty session list for new user: actorId=${actorId}`
         );
-        return [];
+        return {
+          sessions: [],
+          hasMore: false,
+        };
       }
       console.error('[AgentCoreMemoryService] Session list retrieval error:', error);
       throw error;

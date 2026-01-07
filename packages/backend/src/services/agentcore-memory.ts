@@ -10,6 +10,7 @@ import {
   ListMemoryRecordsCommand,
   DeleteMemoryRecordCommand,
   RetrieveMemoryRecordsCommand,
+  DeleteEventCommand,
   paginateListEvents,
 } from '@aws-sdk/client-bedrock-agentcore';
 import {
@@ -417,6 +418,65 @@ export class AgentCoreMemoryService {
         };
       }
       console.error('[AgentCoreMemoryService] Session list retrieval error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a session from AgentCore Memory by deleting all events
+   * @param actorId User ID
+   * @param sessionId Session ID
+   */
+  async deleteSession(actorId: string, sessionId: string): Promise<void> {
+    try {
+      console.log(`[AgentCoreMemoryService] Deleting session events: sessionId=${sessionId}`);
+
+      // Get all events for the session
+      const allEvents = [];
+      const paginator = paginateListEvents(
+        { client: this.client },
+        {
+          memoryId: this.memoryId,
+          actorId,
+          sessionId,
+          maxResults: 100,
+        }
+      );
+
+      for await (const page of paginator) {
+        if (page.events) {
+          allEvents.push(...page.events);
+        }
+      }
+
+      console.log(`[AgentCoreMemoryService] Found ${allEvents.length} events to delete`);
+
+      // Delete each event
+      for (const event of allEvents) {
+        if (event.eventId) {
+          try {
+            await this.client.send(
+              new DeleteEventCommand({
+                memoryId: this.memoryId,
+                actorId,
+                sessionId,
+                eventId: event.eventId,
+              })
+            );
+          } catch (deleteError) {
+            console.warn(
+              `[AgentCoreMemoryService] Failed to delete event ${event.eventId}:`,
+              deleteError
+            );
+          }
+        }
+      }
+
+      console.log(
+        `[AgentCoreMemoryService] Session events deleted successfully: sessionId=${sessionId}`
+      );
+    } catch (error) {
+      console.error('[AgentCoreMemoryService] Session deletion error:', error);
       throw error;
     }
   }

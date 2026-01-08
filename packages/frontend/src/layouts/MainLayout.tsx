@@ -17,6 +17,7 @@ import type { Agent } from '../types/agent';
 import { translateIfKey } from '../utils/agent-translation';
 import { getPageTitleKey } from '../config/routes';
 import { useSessionStore } from '../stores/sessionStore';
+import { useSwipeGesture } from '../hooks/useSwipeGesture';
 
 export function MainLayout() {
   const { isSidebarOpen, isMobileView, setSidebarOpen, setMobileView, setNarrowDesktop } =
@@ -115,6 +116,24 @@ export function MainLayout() {
       narrowDesktopQuery.removeEventListener('change', handleResize);
     };
   }, [setSidebarOpen, setMobileView, setNarrowDesktop]);
+
+  // モバイルでのスワイプジェスチャー対応
+  useSwipeGesture({
+    onSwipeRight: () => {
+      if (isMobileView && !isSidebarOpen) {
+        setSidebarOpen(true);
+      }
+    },
+    onSwipeLeft: () => {
+      if (isMobileView && isSidebarOpen) {
+        setSidebarOpen(false);
+      }
+    },
+    threshold: 50,
+    edgeThreshold: 30,
+    enabled: isMobileView,
+    requireEdgeStart: !isSidebarOpen, // サイドバーが開いている時は画面端判定を無効化
+  });
 
   // Handle overlay click (mobile only)
   const handleOverlayClick = () => {

@@ -285,10 +285,18 @@ export class AgentCoreRuntime extends Construct {
       new iam.PolicyStatement({
         sid: 'BedrockModelInvocation',
         effect: iam.Effect.ALLOW,
-        actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
+        actions: [
+          'bedrock:InvokeModel',
+          'bedrock:InvokeModelWithResponseStream',
+          'bedrock:GetAsyncInvoke',
+          'bedrock:ListAsyncInvokes',
+        ],
         resources: [
           'arn:aws:bedrock:*::foundation-model/*',
           `arn:aws:bedrock:${region}:${account}:*`,
+          // Nova Reel is only available in us-east-1, allow cross-region async invokes
+          `arn:aws:bedrock:us-east-1:${account}:async-invoke/*`,
+          `arn:aws:bedrock:${region}:${account}:async-invoke/*`,
         ],
       })
     );

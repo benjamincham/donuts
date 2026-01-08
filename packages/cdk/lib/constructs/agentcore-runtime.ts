@@ -294,6 +294,8 @@ export class AgentCoreRuntime extends Construct {
         resources: [
           'arn:aws:bedrock:*::foundation-model/*',
           `arn:aws:bedrock:${region}:${account}:*`,
+          // Nova Reel is only available in us-east-1, allow cross-region async invokes
+          `arn:aws:bedrock:us-east-1:${account}:async-invoke/*`,
           `arn:aws:bedrock:${region}:${account}:async-invoke/*`,
         ],
       })

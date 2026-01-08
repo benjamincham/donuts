@@ -23,12 +23,12 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ sessionId, onCreat
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
   const [selectedScenarioPrompt, setSelectedScenarioPrompt] = useState<string | null>(null);
 
-  // シナリオクリック処理
+  // Handle scenario click
   const handleScenarioClick = (prompt: string) => {
     setSelectedScenarioPrompt(prompt);
   };
 
-  // シナリオプロンプト取得関数（MessageInputに渡す）
+  // Function to get scenario prompt (pass to MessageInput)
   const getScenarioPrompt = () => {
     const prompt = selectedScenarioPrompt;
     if (prompt) {

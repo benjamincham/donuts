@@ -42,7 +42,7 @@ export const AgentSelectorModal: React.FC<AgentSelectorModalProps> = ({
   const [deleteConfirmAgent, setDeleteConfirmAgent] = useState<Agent | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
-  // モーダルが開かれたときに初期化
+  // Initialize when modal opens
   useEffect(() => {
     if (isOpen) {
       requestAnimationFrame(() => {
@@ -54,7 +54,7 @@ export const AgentSelectorModal: React.FC<AgentSelectorModalProps> = ({
     }
   }, [isOpen]);
 
-  // メニュー外クリックで閉じる
+  // Close on outside click
   useEffect(() => {
     const handleClickOutside = () => {
       setOpenMenuId(null);
@@ -298,7 +298,7 @@ export const AgentSelectorModal: React.FC<AgentSelectorModalProps> = ({
                                           const wasShared = agent.isShared;
                                           try {
                                             await toggleShare(agent.agentId);
-                                            // 成功時にトースト通知
+                                            // Show toast on success
                                             toast.success(
                                               wasShared
                                                 ? t('agent.unshareSuccess')

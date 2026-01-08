@@ -3,15 +3,15 @@ import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { load } from 'js-yaml';
 
-// 翻訳ファイルのインポート
+// Import translation files
 import jaYaml from '../locales/ja.yaml?raw';
 import enYaml from '../locales/en.yaml?raw';
 
-// YAML パース
+// Parse YAML
 const ja = load(jaYaml) as Record<string, unknown>;
 const en = load(enYaml) as Record<string, unknown>;
 
-// i18n 初期化
+// Initialize i18n
 i18n
   .use(LanguageDetector) // Auto-detect browser language
   .use(initReactI18next) // Integrate with React
@@ -32,10 +32,10 @@ i18n
       escapeValue: false, // React already escapes by default
     },
 
-    // 不足している翻訳キーを検出（開発モードのみ）
+    // Detect missing translation keys (dev mode only)
     saveMissing: import.meta.env.DEV,
 
-    // 不足キーが見つかった場合のハンドラー
+    // Handler for missing keys
     missingKeyHandler: (lngs, ns, key, fallbackValue) => {
       if (import.meta.env.DEV) {
         console.warn(
@@ -50,15 +50,15 @@ i18n
       }
     },
 
-    // 不足キーの場合にキー名をそのまま表示（デフォルト動作を明示）
+    // Display key name as-is for missing keys (explicit default behavior)
     returnEmptyString: false,
 
     detection: {
-      // 言語検出の優先順位
+      // Language detection priority
       order: ['localStorage', 'navigator'],
       // localStorage key name
       lookupLocalStorage: 'i18nextLng',
-      // キャッシュする言語
+      // Languages to cache
       caches: ['localStorage'],
     },
 

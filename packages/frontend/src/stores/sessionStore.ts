@@ -47,6 +47,8 @@ interface SessionActions {
   refreshSessions: () => Promise<void>;
   createNewSession: () => string; // Create new session (generate ID and set flag)
   finalizeNewSession: () => void; // Finalize new session creation (clear flag)
+  addOptimisticSession: (sessionId: string, title?: string) => void; // Optimistically add session to sidebar
+  updateSessionTitle: (sessionId: string, title: string) => void; // Update session title
 }
 
 /**
@@ -166,8 +168,7 @@ export const useSessionStore = create<SessionStore>()(
       },
 
       refreshSessions: async () => {
-        // Reload all sessions
-        set({ sessions: [] });
+        // Reload all sessions (without clearing first to prevent UI flash)
         const { loadSessions } = get();
         console.log('🔄 Refreshing session list...');
         await loadSessions();
@@ -189,6 +190,45 @@ export const useSessionStore = create<SessionStore>()(
       finalizeNewSession: () => {
         set({ isCreatingSession: false });
         console.log('✅ New session creation completed');
+      },
+
+      addOptimisticSession: (sessionId: string, title?: string) => {
+        const { sessions } = get();
+
+        // Check if session already exists
+        const exists = sessions.some((s) => s.sessionId === sessionId);
+        if (exists) {
+          console.log(`⚠️ Session ${sessionId} already exists, skipping optimistic add`);
+          return;
+        }
+
+        // Create optimistic session with title or placeholder
+        const optimisticSession: SessionSummary = {
+          sessionId,
+          title: title || 'New conversation...',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        // Add to beginning of list
+        set({
+          sessions: [optimisticSession, ...sessions],
+        });
+
+        console.log(`✨ Optimistically added session: ${sessionId} - "${optimisticSession.title}"`);
+      },
+
+      updateSessionTitle: (sessionId: string, title: string) => {
+        const { sessions } = get();
+
+        const updatedSessions = sessions.map((session) =>
+          session.sessionId === sessionId
+            ? { ...session, title, updatedAt: new Date().toISOString() }
+            : session
+        );
+
+        set({ sessions: updatedSessions });
+        console.log(`📝 Updated session title: ${sessionId} - "${title}"`);
       },
     }),
     {

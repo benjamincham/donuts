@@ -188,6 +188,9 @@ export const useChatStore = create<ChatStore>()(
       sendPrompt: async (prompt: string, sessionId: string) => {
         const { addMessage, updateMessage, sessions } = get();
 
+        // activeSessionIdを設定（ストリーミングコールバックで正しく動作するため）
+        set({ activeSessionId: sessionId });
+
         // セッション状態の取得/作成
         const sessionState = getOrCreateSessionState(sessions, sessionId);
 
@@ -206,6 +209,12 @@ export const useChatStore = create<ChatStore>()(
         // 新規セッションかどうかを判定（セッション一覧更新に使用）
         const sessionsStore = useSessionStore.getState().sessions;
         const isNewSession = !sessionsStore.some((s) => s.sessionId === sessionId);
+
+        // 新規セッションの場合、即座にサイドバーに楽観的に追加
+        if (isNewSession) {
+          const tempTitle = prompt.length > 30 ? prompt.substring(0, 30) + '...' : prompt;
+          useSessionStore.getState().addOptimisticSession(sessionId, tempTitle);
+        }
 
         try {
           // ユーザーメッセージを追加

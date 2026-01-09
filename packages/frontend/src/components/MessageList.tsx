@@ -15,9 +15,10 @@ interface MessageListProps {
 export const MessageList: React.FC<MessageListProps> = ({ onScenarioClick }) => {
   const { t } = useTranslation();
   const { sessionId } = useParams<{ sessionId?: string }>();
-  const { getSessionState } = useChatStore();
   const { isLoadingEvents } = useSessionStore();
-  const sessionState = sessionId ? getSessionState(sessionId) : null;
+  const sessionState = useChatStore((state) =>
+    sessionId ? (state.sessions[sessionId] ?? null) : null
+  );
   const messages = useMemo(() => sessionState?.messages || [], [sessionState?.messages]);
   const error = sessionState?.error || null;
   const selectedAgent = useSelectedAgent();

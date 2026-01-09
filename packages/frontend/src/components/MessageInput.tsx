@@ -19,9 +19,11 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   getScenarioPrompt,
 }) => {
   const { t } = useTranslation();
-  const { sendPrompt, getSessionState } = useChatStore();
+  const { sendPrompt } = useChatStore();
   const { sendBehavior } = useSettingsStore();
-  const sessionState = sessionId ? getSessionState(sessionId) : null;
+  const sessionState = useChatStore((state) =>
+    sessionId ? (state.sessions[sessionId] ?? null) : null
+  );
   const isLoading = sessionState?.isLoading || false;
   const [input, setInput] = useState('');
   const [isStorageModalOpen, setIsStorageModalOpen] = useState(false);

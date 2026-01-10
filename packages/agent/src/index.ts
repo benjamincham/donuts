@@ -235,7 +235,11 @@ app.use(cors(corsOptions));
 const sessionStorage = createSessionStorage();
 
 // Configure to receive request body as JSON
-app.use(express.json());
+app.use(
+  express.json({
+    limit: '100mb',
+  })
+);
 
 // Apply request context middleware (endpoints requiring authentication)
 app.use('/invocations', requestContextMiddleware);

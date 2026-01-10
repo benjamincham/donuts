@@ -147,6 +147,7 @@ chat:
     invalidType: Invalid file type. Please select PNG, JPEG, WebP, or GIF.
     tooLarge: File is too large. Maximum size is 5MB.
     maxReached: Maximum of 4 images can be attached.
+    totalSizeExceeded: Total size of attached images exceeds 7MB. Please remove some images or select smaller ones.
 
 # Agent
 agent:

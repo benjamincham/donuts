@@ -235,16 +235,24 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
                       />
                     ) : null;
 
-                  case 'image':
-                    return content.image ? (
+                  case 'image': {
+                    if (!content.image) return null;
+                    // Use previewUrl if available (newly attached), otherwise construct from base64 (from session history)
+                    const imageSrc =
+                      content.image.previewUrl ||
+                      (content.image.base64
+                        ? `data:${content.image.mimeType};base64,${content.image.base64}`
+                        : '');
+                    return imageSrc ? (
                       <div key={`image-${index}`} className="inline-block mr-2 mb-2">
                         <img
-                          src={content.image.previewUrl || ''}
-                          alt={content.image.fileName}
+                          src={imageSrc}
+                          alt={content.image.fileName || 'Attached image'}
                           className="max-w-xs max-h-48 object-contain rounded-lg border border-gray-200"
                         />
                       </div>
                     ) : null;
+                  }
 
                   default:
                     return (

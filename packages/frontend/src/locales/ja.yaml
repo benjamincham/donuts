@@ -149,6 +149,7 @@ chat:
     invalidType: 無効なファイル形式です。PNG、JPEG、WebP、またはGIFを選択してください。
     tooLarge: ファイルサイズが大きすぎます。最大5MBまでです。
     maxReached: 添付できる画像は最大4枚までです。
+    totalSizeExceeded: 添付画像の合計サイズが7MBを超えています。画像を減らすか、小さいサイズの画像を選択してください。
 
 # エージェント
 agent:

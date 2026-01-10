@@ -404,15 +404,41 @@ export const useChatStore = create<ChatStore>()(
           );
         };
 
+        // Helper function to convert API MessageContent to local MessageContent type
+        const convertContents = (
+          apiContents: ConversationMessage['contents']
+        ): MessageContent[] => {
+          return apiContents.map((content) => {
+            if (content.type === 'image' && content.image) {
+              // Convert API image format to ImageAttachment format
+              return {
+                type: 'image' as const,
+                image: {
+                  id: nanoid(),
+                  fileName: content.image.fileName || 'image',
+                  mimeType: content.image.mimeType,
+                  size: 0, // Size not available from API
+                  base64: content.image.base64,
+                } as ImageAttachment,
+              };
+            }
+            // Other types are compatible
+            return content as MessageContent;
+          });
+        };
+
         // ConversationMessage を Message 型に変換
-        const messages: Message[] = conversationMessages.map((convMsg) => ({
-          id: convMsg.id,
-          type: convMsg.type,
-          contents: convMsg.contents, // contents配列をそのまま使用
-          timestamp: new Date(convMsg.timestamp),
-          isStreaming: false, // 履歴データはストリーミング中ではない
-          isError: convMsg.type === 'assistant' && isErrorMessage(convMsg.contents), // エラーメッセージを検出
-        }));
+        const messages: Message[] = conversationMessages.map((convMsg) => {
+          const contents = convertContents(convMsg.contents);
+          return {
+            id: convMsg.id,
+            type: convMsg.type,
+            contents,
+            timestamp: new Date(convMsg.timestamp),
+            isStreaming: false, // 履歴データはストリーミング中ではない
+            isError: convMsg.type === 'assistant' && isErrorMessage(contents), // エラーメッセージを検出
+          };
+        });
 
         set({
           messages,

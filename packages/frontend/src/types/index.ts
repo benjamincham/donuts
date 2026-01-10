@@ -37,7 +37,8 @@ export interface ImageAttachment {
 
 // Image attachment configuration constants
 export const IMAGE_ATTACHMENT_CONFIG = {
-  MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB
+  MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB per file
+  MAX_TOTAL_SIZE: 7 * 1024 * 1024, // 7MB total (Base64 encoded ~9.3MB, within AgentCore Memory 10MB limit)
   MAX_COUNT: 4,
   ACCEPTED_TYPES: ['image/png', 'image/jpeg', 'image/webp', 'image/gif'] as const,
   ACCEPTED_EXTENSIONS: ['.png', '.jpg', '.jpeg', '.webp', '.gif'] as const,

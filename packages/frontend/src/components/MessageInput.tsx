@@ -65,6 +65,19 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     [t]
   );
 
+  // 合計サイズのバリデーション
+  const validateTotalSize = useCallback(
+    (currentImages: ImageAttachment[], newFiles: File[]): string | null => {
+      const currentTotal = currentImages.reduce((sum, img) => sum + img.size, 0);
+      const newTotal = newFiles.reduce((sum, file) => sum + file.size, 0);
+      if (currentTotal + newTotal > IMAGE_ATTACHMENT_CONFIG.MAX_TOTAL_SIZE) {
+        return t('chat.imageAttachment.totalSizeExceeded');
+      }
+      return null;
+    },
+    [t]
+  );
+
   // 画像ファイルを処理して添付
   const processAndAttachImages = useCallback(
     (files: FileList | File[]) => {
@@ -77,15 +90,27 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       }
 
       const filesToProcess = fileArray.slice(0, remainingSlots);
-      const newImages: ImageAttachment[] = [];
 
+      // 個別ファイルのバリデーション
+      const validFiles: File[] = [];
       for (const file of filesToProcess) {
         const error = validateImageFile(file);
         if (error) {
           alert(`${file.name}: ${error}`);
           continue;
         }
+        validFiles.push(file);
+      }
 
+      // 合計サイズのバリデーション
+      const totalSizeError = validateTotalSize(attachedImages, validFiles);
+      if (totalSizeError) {
+        alert(totalSizeError);
+        return;
+      }
+
+      const newImages: ImageAttachment[] = [];
+      for (const file of validFiles) {
         const previewUrl = URL.createObjectURL(file);
         newImages.push({
           id: nanoid(),
@@ -101,7 +126,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         setAttachedImages((prev) => [...prev, ...newImages]);
       }
     },
-    [attachedImages.length, validateImageFile, t]
+    [attachedImages, validateImageFile, validateTotalSize, t]
   );
 
   // 画像の削除

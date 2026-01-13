@@ -3,7 +3,7 @@
  * 再帰的なフォルダツリー表示コンポーネント
  */
 
-import { ChevronRight, ChevronDown, Folder, FolderOpen } from 'lucide-react';
+import { ChevronRight, ChevronDown, Folder, FolderOpen, FolderCog } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { FolderNode } from '../api/storage';
 
@@ -11,6 +11,7 @@ interface TreeNodeProps {
   node: FolderNode;
   level: number;
   selectedPath: string;
+  workingDirectoryPath?: string;
   expandedPaths: Set<string>;
   onSelect: (path: string) => void;
   onToggleExpand: (path: string) => void;
@@ -21,6 +22,7 @@ function TreeNode({
   node,
   level,
   selectedPath,
+  workingDirectoryPath,
   expandedPaths,
   onSelect,
   onToggleExpand,
@@ -28,6 +30,7 @@ function TreeNode({
 }: TreeNodeProps) {
   const isExpanded = expandedPaths.has(node.path);
   const isSelected = selectedPath === node.path;
+  const isWorkingDirectory = workingDirectoryPath === node.path;
   const hasChildren = node.children && node.children.length > 0;
 
   const handleClick = () => {
@@ -70,7 +73,9 @@ function TreeNode({
         </button>
 
         {/* フォルダアイコン */}
-        {isExpanded ? (
+        {isWorkingDirectory ? (
+          <FolderCog className="w-4 h-4 text-amber-500" />
+        ) : isExpanded ? (
           <FolderOpen className="w-4 h-4 text-amber-500" />
         ) : (
           <Folder className="w-4 h-4 text-amber-500" />
@@ -89,6 +94,7 @@ function TreeNode({
               node={child}
               level={level + 1}
               selectedPath={selectedPath}
+              workingDirectoryPath={workingDirectoryPath}
               expandedPaths={expandedPaths}
               onSelect={onSelect}
               onToggleExpand={onToggleExpand}
@@ -104,6 +110,7 @@ function TreeNode({
 interface FolderTreeProps {
   tree: FolderNode[];
   selectedPath: string;
+  workingDirectoryPath?: string;
   expandedPaths: Set<string>;
   onSelect: (path: string) => void;
   onToggleExpand: (path: string) => void;
@@ -114,6 +121,7 @@ interface FolderTreeProps {
 export function FolderTree({
   tree,
   selectedPath,
+  workingDirectoryPath,
   expandedPaths,
   onSelect,
   onToggleExpand,
@@ -146,6 +154,7 @@ export function FolderTree({
           node={node}
           level={0}
           selectedPath={selectedPath}
+          workingDirectoryPath={workingDirectoryPath}
           expandedPaths={expandedPaths}
           onSelect={onSelect}
           onToggleExpand={onToggleExpand}

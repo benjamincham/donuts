@@ -11,16 +11,19 @@ interface StoragePathDisplayProps {
 }
 
 export function StoragePathDisplay({ onClick }: StoragePathDisplayProps) {
-  const { currentPath } = useStorageStore();
+  const { agentWorkingDirectory } = useStorageStore();
 
   // Display shortened path (max 40 characters)
-  const displayPath = currentPath.length > 40 ? '...' + currentPath.slice(-37) : currentPath;
+  const displayPath =
+    agentWorkingDirectory.length > 40
+      ? '...' + agentWorkingDirectory.slice(-37)
+      : agentWorkingDirectory;
 
   return (
     <button
       onClick={onClick}
       className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all duration-200 group"
-      title={`ストレージ: ${currentPath}`}
+      title={`Storage: ${agentWorkingDirectory}`}
     >
       <Folder
         fill="rgb(253, 230, 138)"

@@ -21,6 +21,7 @@ import {
   Copy,
   Check,
   HelpCircle,
+  FolderCog,
 } from 'lucide-react';
 import { useStorageStore } from '../stores/storageStore';
 import type { StorageItem, FolderNode } from '../api/storage';
@@ -50,6 +51,7 @@ interface StorageItemComponentProps {
   onNavigate: (path: string) => void;
   onDownload: (item: StorageItem) => void;
   onContextMenu: (e: React.MouseEvent, item: StorageItem) => void;
+  onSetWorkingDirectory?: (path: string) => void;
   isDeleting: boolean;
 }
 
@@ -59,6 +61,7 @@ function StorageItemComponent({
   onNavigate,
   onDownload,
   onContextMenu,
+  onSetWorkingDirectory,
   isDeleting,
 }: StorageItemComponentProps) {
   const { t } = useTranslation();
@@ -155,6 +158,20 @@ function StorageItemComponent({
 
         {/* アクション */}
         <div className="flex items-center gap-1 sm:gap-2">
+          {item.type === 'directory' && onSetWorkingDirectory && (
+            <Tooltip content={t('storage.setAsWorkingDirectory')}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSetWorkingDirectory(item.path);
+                }}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                title={t('storage.setAsWorkingDirectory')}
+              >
+                <FolderCog className="w-4 h-4" />
+              </button>
+            </Tooltip>
+          )}
           <button
             onClick={handleDownloadClick}
             className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -187,6 +204,7 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
   const { t } = useTranslation();
   const {
     currentPath,
+    agentWorkingDirectory,
     items,
     isLoading,
     error,
@@ -204,6 +222,7 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
     clearError,
     loadFolderTree,
     toggleFolderExpand,
+    setAgentWorkingDirectory,
   } = useStorageStore();
 
   const [newDirectoryName, setNewDirectoryName] = useState('');
@@ -762,6 +781,11 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
             <X className="w-5 h-5" />
           </button>
         </div>
+        {/* 作業ディレクトリ表示 */}
+        <div className="mt-2 text-xs text-gray-600">
+          <span className="font-medium">{t('storage.workingDirectory')}:</span>{' '}
+          <span className="font-mono">{agentWorkingDirectory}</span>
+        </div>
       </div>
 
       {/* ツールバー */}
@@ -773,7 +797,7 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
             className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <Upload className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{t('storage.upload')}</span>
+            <span>{t('storage.upload')}</span>
           </button>
 
           <button
@@ -781,7 +805,7 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
             className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
           >
             <FolderPlus className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{t('storage.newFolder')}</span>
+            <span>{t('storage.newFolder')}</span>
           </button>
 
           <input
@@ -817,26 +841,6 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
         )}
       </div>
 
-      {/* Directory size warning */}
-      {sizeWarning?.show && (
-        <div className="mx-4 md:mx-6 mt-2 mb-0">
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2">
-            <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-amber-800">
-                {t('storage.largeSizeWarningTitle')}
-              </p>
-              <p className="text-sm text-amber-700 mt-1">
-                {t('storage.largeSizeWarningMessage', {
-                  size: formatSizeForWarning(sizeWarning.totalSize),
-                  count: sizeWarning.fileCount,
-                })}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* コンテンツエリア: レスポンシブレイアウト */}
       <div className="flex divide-x divide-gray-200 flex-1 min-h-0">
         {/* 左カラム: フォルダツリー - デスクトップのみ表示 */}
@@ -848,6 +852,7 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
             <FolderTree
               tree={folderTree}
               selectedPath={currentPath}
+              workingDirectoryPath={agentWorkingDirectory}
               expandedPaths={expandedFolders}
               onSelect={handleNavigate}
               onToggleExpand={toggleFolderExpand}
@@ -869,6 +874,26 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
                 <Home className="w-4 h-4 flex-shrink-0" />
                 <span>{t('storage.root')}</span>
               </button>
+
+              {/* Directory size warning */}
+              {sizeWarning?.show && (
+                <div className="mt-2 mb-0 w-full">
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2">
+                    <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-800">
+                        {t('storage.largeSizeWarningTitle')}
+                      </p>
+                      <p className="text-sm text-amber-700 mt-1">
+                        {t('storage.largeSizeWarningMessage', {
+                          size: formatSizeForWarning(sizeWarning.totalSize),
+                          count: sizeWarning.fileCount,
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {pathSegments.map((segment, index) => {
                 const segmentPath = '/' + pathSegments.slice(0, index + 1).join('/');
@@ -939,6 +964,7 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
                         onNavigate={handleNavigate}
                         onDownload={handleDownload}
                         onContextMenu={handleContextMenu}
+                        onSetWorkingDirectory={setAgentWorkingDirectory}
                         isDeleting={deletingItemPath === item.path}
                       />
                     ))}
@@ -1020,13 +1046,25 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
                 <span className="text-gray-900">{t('storage.download')}</span>
               </button>
             ) : (
-              <button
-                onClick={handleContextFolderDownload}
-                className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 flex items-center gap-2 transition-colors"
-              >
-                <Download className="w-4 h-4 text-gray-600" />
-                <span className="text-gray-900">{t('storage.downloadFolder')}</span>
-              </button>
+              <>
+                <button
+                  onClick={() => {
+                    setAgentWorkingDirectory(contextMenu.path);
+                    setContextMenu(null);
+                  }}
+                  className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 flex items-center gap-2 transition-colors"
+                >
+                  <FolderCog className="w-4 h-4 text-gray-600" />
+                  <span className="text-gray-900">{t('storage.setAsWorkingDirectory')}</span>
+                </button>
+                <button
+                  onClick={handleContextFolderDownload}
+                  className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 flex items-center gap-2 transition-colors"
+                >
+                  <Download className="w-4 h-4 text-gray-600" />
+                  <span className="text-gray-900">{t('storage.downloadFolder')}</span>
+                </button>
+              </>
             )}
             <button
               onClick={handleContextDelete}
@@ -1065,6 +1103,16 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
               top: `${Math.min(folderContextMenu.y, window.innerHeight - 200)}px`,
             }}
           >
+            <button
+              onClick={() => {
+                setAgentWorkingDirectory(folderContextMenu.path);
+                setFolderContextMenu(null);
+              }}
+              className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 flex items-center gap-2 transition-colors"
+            >
+              <FolderCog className="w-4 h-4 text-gray-600" />
+              <span className="text-gray-900">{t('storage.setAsWorkingDirectory')}</span>
+            </button>
             <button
               onClick={handleTreeFolderDownload}
               className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 flex items-center gap-2 transition-colors"

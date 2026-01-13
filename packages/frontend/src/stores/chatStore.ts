@@ -270,8 +270,8 @@ export const useChatStore = create<ChatStore>()(
           // Get selected agent configuration
           const selectedAgent = useAgentStore.getState().selectedAgent;
 
-          // Get storage path
-          const currentPath = useStorageStore.getState().currentPath;
+          // Get agent working directory
+          const agentWorkingDirectory = useStorageStore.getState().agentWorkingDirectory;
 
           // Get long-term memory settings
           const { isMemoryEnabled } = useMemoryStore.getState();
@@ -297,14 +297,14 @@ export const useChatStore = create<ChatStore>()(
                 modelId: selectedModelId,
                 systemPrompt: selectedAgent.systemPrompt,
                 enabledTools: selectedAgent.enabledTools,
-                storagePath: currentPath,
+                storagePath: agentWorkingDirectory,
                 memoryEnabled: isMemoryEnabled,
                 mcpConfig: selectedAgent.mcpConfig as Record<string, unknown> | undefined,
                 images: imageData,
               }
             : {
                 modelId: selectedModelId,
-                storagePath: currentPath,
+                storagePath: agentWorkingDirectory,
                 memoryEnabled: isMemoryEnabled,
                 images: imageData,
               };
@@ -316,7 +316,7 @@ export const useChatStore = create<ChatStore>()(
           } else {
             console.log(`🤖 Using default agent`);
           }
-          console.log(`📁 Storage path restriction: ${currentPath}`);
+          console.log(`📁 Agent working directory: ${agentWorkingDirectory}`);
 
           // Process streaming response
           await streamAgentResponse(

@@ -9,11 +9,13 @@ import * as storageApi from '../api/storage';
 
 // localStorageキー
 const STORAGE_PATH_KEY = 'storage-current-path';
+const AGENT_WORKING_DIRECTORY_KEY = 'storage-agent-working-directory';
 const EXPANDED_FOLDERS_KEY = 'storage-expanded-folders';
 
 interface StorageState {
   // 状態
   currentPath: string;
+  agentWorkingDirectory: string;
   items: StorageItem[];
   isLoading: boolean;
   error: string | null;
@@ -29,6 +31,7 @@ interface StorageState {
 
   // アクション
   setCurrentPath: (path: string) => void;
+  setAgentWorkingDirectory: (path: string) => void;
   loadItems: (path?: string) => Promise<void>;
   uploadFile: (file: File, path?: string) => Promise<void>;
   uploadFiles: (files: Array<{ file: File; relativePath: string }>) => Promise<void>;
@@ -68,6 +71,7 @@ const saveExpandedFolders = (folders: Set<string>) => {
 export const useStorageStore = create<StorageState>((set, get) => ({
   // 初期状態（localStorageから読み込み）
   currentPath: localStorage.getItem(STORAGE_PATH_KEY) || '/',
+  agentWorkingDirectory: localStorage.getItem(AGENT_WORKING_DIRECTORY_KEY) || '/',
   items: [],
   isLoading: false,
   error: null,
@@ -86,6 +90,14 @@ export const useStorageStore = create<StorageState>((set, get) => ({
     set({ currentPath: path });
     // localStorageに保存
     localStorage.setItem(STORAGE_PATH_KEY, path);
+  },
+
+  // エージェント作業ディレクトリを設定
+  setAgentWorkingDirectory: (path: string) => {
+    set({ agentWorkingDirectory: path });
+    // localStorageに保存
+    localStorage.setItem(AGENT_WORKING_DIRECTORY_KEY, path);
+    console.log(`📁 Agent working directory set to: ${path}`);
   },
 
   // アイテム一覧を読み込み

@@ -370,6 +370,13 @@ storage:
   folderNamePlaceholder: Enter folder name
   folderNameSpaceError: Folder name cannot contain spaces
   itemCount: '{{count}} items • Max file size: 5MB'
+  setAsWorkingDirectory: Set as working directory
+  currentWorkingDirectory: Current working directory
+  workingDirectory: Working directory
+
+  # Large directory size warning
+  largeSizeWarningTitle: Large Storage Directory
+  largeSizeWarningMessage: 'This directory contains {{size}} of data ({{count}} files). Sync may take some time when starting a session.'
 
   # Folder download progress
   downloadProgress:

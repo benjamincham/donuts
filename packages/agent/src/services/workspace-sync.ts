@@ -14,6 +14,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { pipeline } from 'stream/promises';
 import * as crypto from 'crypto';
+import pLimit from 'p-limit';
 import { SyncIgnoreFilter } from './sync-ignore-filter.js';
 
 const s3Client = new S3Client({ region: process.env.AWS_REGION });
@@ -22,6 +23,27 @@ const s3Client = new S3Client({ region: process.env.AWS_REGION });
  * 同時アップロード数の制限
  */
 const CONCURRENT_UPLOAD_LIMIT = 10;
+
+/**
+ * 同時ダウンロード数の制限
+ * TODO: 並列数の最適化は今後検討したい。
+ * p-limit を使わない場合
+ * CONCURRENT_DOWNLOAD_LIMIT が 10並列の場合、
+ * [INFO] 2026-01-13T04:31:41.190Z [WORKSPACE_SYNC] Sync complete: 2116 downloaded, 0 deleted in 21471ms
+ * CONCURRENT_DOWNLOAD_LIMIT が 30並列の場合、
+ * [INFO] 2026-01-13T04:59:09.007Z [WORKSPACE_SYNC] Sync complete: 2116 downloaded, 0 deleted in 11405ms
+ * CONCURRENT_DOWNLOAD_LIMIT が 50並列の場合、
+ * [INFO] 2026-01-13T05:16:05.986Z [WORKSPACE_SYNC] Sync complete: 2116 downloaded, 0 deleted in 10224ms
+ * CONCURRENT_DOWNLOAD_LIMIT が 100並列の場合、
+ * [INFO] 2026-01-13T05:20:27.151Z [WORKSPACE_SYNC] Sync complete: 2116 downloaded, 0 deleted in 7276ms
+ *
+ * p-limit を使う場合
+ * CONCURRENT_DOWNLOAD_LIMIT が 50並列の場合、
+ * [INFO] 2026-01-13T06:07:37.149Z [WORKSPACE_SYNC] Sync complete: 2116 downloaded, 0 deleted in 10008ms
+ * CONCURRENT_DOWNLOAD_LIMIT が 100並列の場合、
+ * [INFO] 2026-01-13T06:12:04.893Z [WORKSPACE_SYNC] Sync complete: 2116 downloaded, 0 deleted in 10341ms
+ */
+const CONCURRENT_DOWNLOAD_LIMIT = 50;
 
 /**
  * ファイル拡張子からContent-Typeを推測
@@ -190,7 +212,7 @@ export class WorkspaceSync {
   }
 
   /**
-   * S3からローカルへダウンロード（初期同期）
+   * S3からローカルへダウンロード（初期同期）- 並列ダウンロード対応
    */
   private async syncFromS3(): Promise<void> {
     const startTime = Date.now();
@@ -208,7 +230,13 @@ export class WorkspaceSync {
       // ワークスペースディレクトリを作成
       this.ensureDirectoryExists(this.workspaceDir);
 
-      // S3からファイル一覧を取得
+      // Phase 1: S3からファイル一覧を全て取得
+      interface DownloadTask {
+        s3Key: string;
+        relativePath: string;
+        localPath: string;
+      }
+      const downloadTasks: DownloadTask[] = [];
       let continuationToken: string | undefined;
 
       do {
@@ -227,44 +255,81 @@ export class WorkspaceSync {
               continue; // Skip folders
             }
 
-            try {
-              // 相対パスを取得
-              const relativePath = item.Key.replace(s3Prefix, '');
+            // 相対パスを取得
+            const relativePath = item.Key.replace(s3Prefix, '');
 
-              // Check if file should be ignored
-              if (this.ignoreFilter.isIgnored(relativePath)) {
-                logger.debug(`[WORKSPACE_SYNC] Skipping ignored file: ${relativePath}`);
-                continue;
-              }
-
-              // S3に存在するパスを記録
-              s3FilePaths.add(relativePath);
-
-              const localPath = path.join(this.workspaceDir, relativePath);
-
-              // ファイルをダウンロード
-              await this.downloadFile(item.Key, localPath);
-              downloadedFiles++;
-
-              // ファイル情報をスナップショットに保存
-              const stats = fs.statSync(localPath);
-              const hash = await this.calculateFileHash(localPath);
-              this.fileSnapshot.set(relativePath, {
-                path: relativePath,
-                size: stats.size,
-                mtime: stats.mtimeMs,
-                hash,
-              });
-            } catch (error) {
-              const errorMsg = `Failed to download ${item.Key}: ${error}`;
-              logger.error(`[WORKSPACE_SYNC] ${errorMsg}`);
-              errors.push(errorMsg);
+            // Check if file should be ignored
+            if (this.ignoreFilter.isIgnored(relativePath)) {
+              logger.debug(`[WORKSPACE_SYNC] Skipping ignored file: ${relativePath}`);
+              continue;
             }
+
+            // S3に存在するパスを記録
+            s3FilePaths.add(relativePath);
+
+            const localPath = path.join(this.workspaceDir, relativePath);
+
+            downloadTasks.push({
+              s3Key: item.Key,
+              relativePath,
+              localPath,
+            });
           }
         }
 
         continuationToken = listResponse.NextContinuationToken;
       } while (continuationToken);
+
+      logger.info(
+        `[WORKSPACE_SYNC] Found ${downloadTasks.length} files to download (concurrency: ${CONCURRENT_DOWNLOAD_LIMIT})`
+      );
+
+      // Phase 2: p-limit を使った効率的な並列ダウンロード
+      // 各タスクが完了次第、次のタスクを開始するため、常に最大並列数を維持
+      const limit = pLimit(CONCURRENT_DOWNLOAD_LIMIT);
+      let completedCount = 0;
+      const progressInterval = Math.max(1, Math.floor(downloadTasks.length / 20)); // 5%刻みで進捗表示
+
+      const downloadPromises = downloadTasks.map((task) =>
+        limit(async () => {
+          try {
+            // ファイルをダウンロード
+            await this.downloadFile(task.s3Key, task.localPath);
+
+            // ファイル情報をスナップショットに保存
+            const stats = fs.statSync(task.localPath);
+            const hash = await this.calculateFileHash(task.localPath);
+            this.fileSnapshot.set(task.relativePath, {
+              path: task.relativePath,
+              size: stats.size,
+              mtime: stats.mtimeMs,
+              hash,
+            });
+
+            downloadedFiles++;
+            completedCount++;
+
+            // Progress log for large downloads (5%刻み)
+            if (downloadTasks.length > 100 && completedCount % progressInterval === 0) {
+              const percentage = Math.round((completedCount / downloadTasks.length) * 100);
+              logger.info(
+                `[WORKSPACE_SYNC] Download progress: ${completedCount}/${downloadTasks.length} (${percentage}%)`
+              );
+            }
+
+            return { success: true, relativePath: task.relativePath };
+          } catch (error) {
+            const errorMsg = `Failed to download ${task.s3Key}: ${error}`;
+            logger.error(`[WORKSPACE_SYNC] ${errorMsg}`);
+            errors.push(errorMsg);
+            completedCount++;
+            return { success: false, relativePath: task.relativePath, error: errorMsg };
+          }
+        })
+      );
+
+      // すべてのダウンロードが完了するまで待機
+      await Promise.all(downloadPromises);
 
       // ローカルにのみ存在するファイルを削除
       deletedFiles = await this.cleanupLocalOnlyFiles(s3FilePaths);
@@ -351,11 +416,13 @@ export class WorkspaceSync {
         `[WORKSPACE_SYNC] Uploading ${uploadTasks.length} files with concurrency limit ${CONCURRENT_UPLOAD_LIMIT}`
       );
 
-      // 同時実行数を制限して並列アップロード
-      for (let i = 0; i < uploadTasks.length; i += CONCURRENT_UPLOAD_LIMIT) {
-        const chunk = uploadTasks.slice(i, i + CONCURRENT_UPLOAD_LIMIT);
+      // p-limit を使った効率的な並列アップロード
+      const limit = pLimit(CONCURRENT_UPLOAD_LIMIT);
+      let completedCount = 0;
+      const progressInterval = Math.max(1, Math.floor(uploadTasks.length / 20)); // 5%刻みで進捗表示
 
-        const uploadPromises = chunk.map(async (task) => {
+      const uploadPromises = uploadTasks.map((task) =>
+        limit(async () => {
           try {
             await this.uploadFile(task.localPath, task.s3Key);
 
@@ -363,17 +430,28 @@ export class WorkspaceSync {
             this.fileSnapshot.set(task.relativePath, task.currentInfo);
 
             uploadedFiles++;
-            logger.debug(`[WORKSPACE_SYNC] Uploaded: ${task.relativePath}`);
+            completedCount++;
+
+            // Progress log for large uploads (5%刻み)
+            if (uploadTasks.length > 100 && completedCount % progressInterval === 0) {
+              const percentage = Math.round((completedCount / uploadTasks.length) * 100);
+              logger.info(
+                `[WORKSPACE_SYNC] Upload progress: ${completedCount}/${uploadTasks.length} (${percentage}%)`
+              );
+            } else {
+              logger.debug(`[WORKSPACE_SYNC] Uploaded: ${task.relativePath}`);
+            }
           } catch (error) {
             const errorMsg = `Failed to upload ${task.relativePath}: ${error}`;
             logger.error(`[WORKSPACE_SYNC] ${errorMsg}`);
             errors.push(errorMsg);
+            completedCount++;
           }
-        });
+        })
+      );
 
-        // チャンク内のファイルを並列アップロード
-        await Promise.all(uploadPromises);
-      }
+      // すべてのアップロードが完了するまで待機
+      await Promise.all(uploadPromises);
 
       const duration = Date.now() - startTime;
       logger.info(`[WORKSPACE_SYNC] Upload complete: ${uploadedFiles} files in ${duration}ms`);

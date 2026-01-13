@@ -372,6 +372,13 @@ storage:
   folderNamePlaceholder: フォルダ名を入力
   folderNameSpaceError: フォルダ名にスペースを含めることはできません
   itemCount: '{{count}} 件のアイテム • 最大ファイルサイズ: 5MB'
+  setAsWorkingDirectory: 作業ディレクトリに設定
+  currentWorkingDirectory: 現在の作業ディレクトリ
+  workingDirectory: 作業ディレクトリ
+
+  # 大容量ディレクトリの警告
+  largeSizeWarningTitle: 大容量のストレージディレクトリ
+  largeSizeWarningMessage: 'このディレクトリには {{size}} のデータ（{{count}} ファイル）が含まれています。セッション開始時の同期に時間がかかる場合があります。'
 
   # フォルダダウンロード進捗
   downloadProgress:

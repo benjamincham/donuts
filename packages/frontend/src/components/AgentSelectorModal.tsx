@@ -204,10 +204,11 @@ export const AgentSelectorModal: React.FC<AgentSelectorModalProps> = ({
                 {/* ローディング表示 */}
                 {isLoading && <LoadingIndicator size="lg" spacing="lg" />}
 
-                {/* 検索バー */}
+                {/* 検索バーと新規作成ボタン */}
                 {!isLoading && agents.length > 0 && (
-                  <div className="mb-6">
-                    <div className="relative">
+                  <div className="mb-6 flex items-center gap-4">
+                    {/* 検索バー（左側） */}
+                    <div className="relative flex-1">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input
                         type="text"
@@ -226,18 +227,19 @@ export const AgentSelectorModal: React.FC<AgentSelectorModalProps> = ({
                         </button>
                       )}
                     </div>
-                  </div>
-                )}
 
-                {/* 新規作成ボタン - デスクトップのみ */}
-                {!isLoading && !isMobileView && (
-                  <div className="mb-8">
+                    {/* 新規作成ボタン（右側） - モバイル: アイコンのみ、デスクトップ: フルテキスト */}
                     <button
                       onClick={() => setMode('create')}
-                      className="inline-flex items-center space-x-3 px-6 py-3 text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
+                      className={`inline-flex items-center text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors shadow-sm ${
+                        isMobileView ? 'p-2.5' : 'space-x-2 px-6 py-2.5'
+                      }`}
+                      title={isMobileView ? t('agent.createNewAgent') : undefined}
                     >
                       <Plus className="w-5 h-5" />
-                      <span className="font-medium">{t('agent.createNewAgent')}</span>
+                      {!isMobileView && (
+                        <span className="font-medium">{t('agent.createNewAgent')}</span>
+                      )}
                     </button>
                   </div>
                 )}

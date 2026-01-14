@@ -809,7 +809,7 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
           </button>
 
           <button
-            onClick={() => handleSetWorkingDirectory(currentPath)}
+            onClick={() => setAgentWorkingDirectory(currentPath)}
             disabled={agentWorkingDirectory === currentPath}
             className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >

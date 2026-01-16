@@ -60,6 +60,7 @@ describe('Trigger Lambda Integration Test', () => {
       id: 'trigger-epB5aPbTjrFGymD3ws9q3',
       'detail-type': 'Scheduled Event',
       source: 'agentcore.trigger',
+      account: '123456789012',
       time: '2026-01-15T06:09:07.023Z',
       region: 'ap-northeast-1',
       resources: [],

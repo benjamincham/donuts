@@ -115,8 +115,9 @@ export async function handleInvocation(req: Request, res: Response): Promise<voi
     }
     const actorId = userIdResult.userId;
 
-    // Set storagePath in context
+    // Set userId and storagePath in context
     if (context) {
+      context.userId = actorId;
       context.storagePath = storagePath || '/';
     }
 

@@ -338,7 +338,12 @@ export function useMessageEventsSubscription(sessionId: string | null) {
     }
 
     if (wsRef.current) {
-      wsRef.current.close(1000, 'Component unmount');
+      // Only close if the connection is fully established (OPEN state)
+      // This prevents errors during React Strict Mode double-mount
+      if (wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.close(1000, 'Component unmount');
+      }
+      // Clear the reference regardless of state
       wsRef.current = null;
     }
     setIsConnected(false);

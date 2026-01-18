@@ -118,16 +118,19 @@ export function useSessionEventsSubscription() {
     }
 
     if (wsRef.current) {
-      // Send unsubscribe before closing
+      // Only close if the connection is fully established (OPEN state)
+      // This prevents errors during React Strict Mode double-mount
       if (wsRef.current.readyState === WebSocket.OPEN) {
+        // Send unsubscribe before closing
         wsRef.current.send(
           JSON.stringify({
             type: 'unsubscribe',
             id: 'session-subscription',
           })
         );
+        wsRef.current.close(1000, 'Component unmount');
       }
-      wsRef.current.close(1000, 'Component unmount');
+      // Clear the reference regardless of state
       wsRef.current = null;
     }
     setIsConnected(false);

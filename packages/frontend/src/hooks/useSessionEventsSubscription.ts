@@ -25,11 +25,8 @@ interface SessionEvent {
  */
 interface AppSyncMessage {
   type: string;
-  payload?: {
-    data?: string;
-  };
   id?: string;
-  connectionTimeoutMs?: number;
+  event?: string; // Data messages contain event field
 }
 
 /**
@@ -197,8 +194,7 @@ export function useSessionEventsSubscription() {
       // Create subprotocol with Base64URL encoded header
       const authProtocol = `header-${getBase64URLEncoded(authorization)}`;
 
-      console.log(`📡 Connecting to AppSync Events: ${endpoint}`);
-      console.log(`📡 Auth host: ${httpHost}`);
+      console.log(`📡 Connecting to AppSync Events`);
 
       // Connect using subprotocol authentication
       // Reference: AppSync Events requires 'aws-appsync-event-ws' subprotocol
@@ -225,12 +221,6 @@ export function useSessionEventsSubscription() {
 
           switch (message.type) {
             case 'connection_ack': {
-              console.log('📡 Connection acknowledged');
-
-              // Set up keep-alive timeout
-              const timeoutMs = message.connectionTimeoutMs || 300000;
-              console.log(`📡 Keep-alive timeout: ${timeoutMs}ms`);
-
               // Subscribe to session channel for this user
               // Note: authorization is required for each subscribe message
               // Reference: https://docs.aws.amazon.com/appsync/latest/eventapi/event-api-websocket-protocol.html
@@ -249,7 +239,7 @@ export function useSessionEventsSubscription() {
             }
 
             case 'subscribe_success':
-              console.log('📡 Subscription successful');
+              // Subscription successful - no action needed
               break;
 
             case 'subscribe_error':
@@ -259,10 +249,8 @@ export function useSessionEventsSubscription() {
             case 'data': {
               // Parse and handle event data
               // AppSync Events API returns event data in 'event' field as string
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const eventData = (message as any).event;
-              if (eventData) {
-                const sessionEvent = JSON.parse(eventData) as SessionEvent;
+              if (message.event) {
+                const sessionEvent = JSON.parse(message.event) as SessionEvent;
                 handleSessionEvent(sessionEvent);
               }
               break;
@@ -280,7 +268,8 @@ export function useSessionEventsSubscription() {
               break;
 
             default:
-              console.log('📡 Unknown message type:', message.type, message);
+              // Unknown message type - ignore
+              break;
           }
         } catch (error) {
           console.error('📡 Failed to parse WebSocket message:', error);

@@ -132,8 +132,7 @@ async function publishToAppSync(userId: string, event: SessionEvent): Promise<vo
     headers: signedRequest.headers,
   };
 
-  const response = await makeRequest(url.href, options, body);
-  console.log(`Published to ${channel}:`, response);
+  await makeRequest(url.href, options, body);
 }
 
 /**
@@ -142,7 +141,7 @@ async function publishToAppSync(userId: string, event: SessionEvent): Promise<vo
 export const handler = async (
   event: DynamoDBStreamEvent
 ): Promise<{ statusCode: number; body: string }> => {
-  console.log('Received DynamoDB Stream event:', JSON.stringify(event, null, 2));
+  let publishedCount = 0;
 
   for (const record of event.Records) {
     try {
@@ -159,11 +158,15 @@ export const handler = async (
       }
 
       await publishToAppSync(userId, sessionEvent);
-      console.log(`Published event for user ${userId}:`, sessionEvent);
+      publishedCount++;
     } catch (error) {
       console.error('Failed to process record:', error);
       // Don't throw - continue processing other records
     }
+  }
+
+  if (publishedCount > 0) {
+    console.log(`Published ${publishedCount} session events`);
   }
 
   return { statusCode: 200, body: 'OK' };

@@ -37,7 +37,7 @@ FullStack AgentCore is an enterprise-ready multi-agent platform that enables tea
 This project provides a complete stack for deploying AI agents powered by Amazon Bedrock.
 
 <div align="center">
-  <img src="./docs/fullstack-agentcore-architecture.drawio.png" alt="Architecture Diagram" width="80%" style="border: 1px solid #333; border-radius: 4px;">
+  <img src="./docs/donuts-architecture.drawio.png" alt="Architecture Diagram" width="80%" style="border: 1px solid #333; border-radius: 4px;">
 </div>
 
 
@@ -140,7 +140,7 @@ After deployment, the CloudFormation stack outputs will include the Frontend URL
 - [💻 Local Development Setup](docs/local-development-setup.md) - Environment setup automation
 - [🔐 JWT Authentication System](docs/jwt-authentication.md) - Authentication details
 - [🚀 PR Auto Deploy](docs/pr-auto-deploy-setup.md) - Automatic PR environment deployment with GitHub Actions
-- [📊 Architecture Diagram](docs/fullstack-agentcore-architecture.drawio.png)
+- [📊 Architecture Diagram](docs/donuts-architecture.drawio.png)
 
 ## 🛠️ Development
 

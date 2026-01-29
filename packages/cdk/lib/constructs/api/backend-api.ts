@@ -5,6 +5,7 @@ import * as apigatewayv2Integrations from 'aws-cdk-lib/aws-apigatewayv2-integrat
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import { Platform } from 'aws-cdk-lib/aws-ecr-assets';
+import { ContainerImageBuild } from 'deploy-time-build';
 import { Construct } from 'constructs';
 import { CognitoAuth } from '../auth';
 
@@ -203,13 +204,35 @@ export class BackendApi extends Construct {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
+    // Build container image using deploy-time-build (CodeBuild)
+    const containerImage = new ContainerImageBuild(this, 'BackendImageBuild', {
+      directory: props.dockerContextPath || '.',
+      file: props.dockerFileName || 'docker/backend.Dockerfile',
+      platform: Platform.LINUX_AMD64,
+      // Exclude large directories to speed up CDK synth hash calculation
+      exclude: [
+        'node_modules',
+        '.git',
+        'cdk.out',
+        'dist',
+        '.vscode',
+        '.idea',
+        'packages/frontend',
+        'packages/client',
+        'packages/lambda-tools',
+        'docs',
+        '*.log',
+        '.env*',
+        'coverage',
+        '.nyc_output',
+        '__tests__',
+      ],
+    });
+
     // Create Lambda function (Docker Image Function)
     this.lambdaFunction = new lambda.DockerImageFunction(this, 'BackendApiFunction', {
       functionName: `${apiName}-function`,
-      code: lambda.DockerImageCode.fromImageAsset(props.dockerContextPath || '.', {
-        file: props.dockerFileName || 'docker/backend.Dockerfile',
-        platform: Platform.LINUX_AMD64,
-      }),
+      code: containerImage.toLambdaDockerImageCode(),
       architecture: lambda.Architecture.X86_64,
       timeout: cdk.Duration.seconds(props.timeout || 30),
       memorySize: props.memorySize || 1024,

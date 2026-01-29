@@ -8,6 +8,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as agentcore from '@aws-cdk/aws-bedrock-agentcore-alpha';
 import { RuntimeAuthorizerConfiguration } from '@aws-cdk/aws-bedrock-agentcore-alpha';
 import { Platform } from 'aws-cdk-lib/aws-ecr-assets';
+import { ContainerImageBuild } from 'deploy-time-build';
 import { Construct } from 'constructs';
 import { CognitoAuth } from '../auth';
 import { AgentCoreGateway } from './agentcore-gateway';
@@ -134,14 +135,39 @@ export class AgentCoreRuntime extends Construct {
   constructor(scope: Construct, id: string, props: AgentCoreRuntimeProps) {
     super(scope, id);
 
+    // Build container image using deploy-time-build (CodeBuild)
     // Platform: ARM64 (Amazon Bedrock AgentCore Runtime requires ARM64 architecture)
-    // Note: This works seamlessly on Apple Silicon Macs (native ARM64).
-    // For x86_64 systems (GitHub Actions), QEMU emulation is used to build ARM64 images.
-    // See .github/workflows/auto-deploy.yml for QEMU setup.
-    const agentRuntimeArtifact = agentcore.AgentRuntimeArtifact.fromAsset('.', {
+    // Note: Using CodeBuild eliminates the need for QEMU emulation on x86_64 systems.
+    // CodeBuild natively supports ARM64 builds.
+    const containerImage = new ContainerImageBuild(this, 'AgentImageBuild', {
+      directory: '.',
       file: 'docker/agent.Dockerfile',
       platform: Platform.LINUX_ARM64,
+      // Exclude large directories to speed up CDK synth hash calculation
+      exclude: [
+        'node_modules',
+        '.git',
+        'cdk.out',
+        'dist',
+        '.vscode',
+        '.idea',
+        'packages/frontend',
+        'packages/client',
+        'packages/lambda-tools',
+        'docs',
+        '*.log',
+        '.env*',
+        'coverage',
+        '.nyc_output',
+        '__tests__',
+      ],
     });
+
+    // Create AgentRuntimeArtifact from ECR repository
+    const agentRuntimeArtifact = agentcore.AgentRuntimeArtifact.fromEcrRepository(
+      containerImage.repository,
+      containerImage.imageTag
+    );
 
     // Authentication configuration
     let authorizerConfiguration: RuntimeAuthorizerConfiguration | undefined;

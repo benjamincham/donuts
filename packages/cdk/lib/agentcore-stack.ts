@@ -8,7 +8,8 @@ import {
 } from './constructs/agentcore';
 import { AgentsTable, SessionsTable, TriggersTable, UserStorage } from './constructs/storage';
 import { TriggerLambda, TriggerEventSources, SessionStreamHandler } from './constructs/triggers';
-import { BackendApi, Frontend, AppSyncEvents } from './constructs/api';
+import { BackendApi, AppSyncEvents } from './constructs/api';
+import { Frontend } from './constructs/frontend';
 import { CognitoAuth } from './constructs/auth';
 import { EnvironmentConfig } from '../config';
 

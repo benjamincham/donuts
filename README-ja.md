@@ -49,9 +49,16 @@ Donutsは、チームが AI エージェントを**自由に作成・カスタ�
 
 本アプリケーションは Amazon Bedrock AgentCore を基盤としたフルサーバーレスアーキテクチャを採用しています。ユーザーリクエストは React フロントエンドから Cognito 認証を経て AgentCore Runtime に到達し、AgentCore Gateway 経由のツール統合とともに AI エージェントが稼働します。
 
+<br>
+
 <div align="center">
   <img src="./docs/donuts-architecture.drawio.png" alt="アーキテクチャ図" width="80%">
 </div>
+
+<br>
+
+### Tech Stack
+
 
 | レイヤー | サービス |
 |---------|---------|

@@ -49,9 +49,15 @@ Preset agents are also available for immediate use, covering various domains inc
 
 This application uses a fully serverless architecture built on Amazon Bedrock AgentCore. User requests flow from the React frontend through Cognito authentication to the AgentCore Runtime, which orchestrates AI agent execution with tool integration via the AgentCore Gateway.
 
+<br>
+
 <div align="center">
   <img src="./docs/donuts-architecture.drawio.png" alt="Architecture Diagram" width="80%">
 </div>
+
+<br>
+
+### Tech Stack
 
 | Layer | Services |
 |-------|----------|

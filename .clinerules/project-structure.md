@@ -1,11 +1,11 @@
 ---
 name: project-structure
-description: Project structure and organization guidelines for Fullstack AgentCore
+description: Project structure and organization guidelines for Donuts
 ---
 
 # Project Structure Guide
 
-This document defines the structure and organization of the Fullstack AgentCore monorepo.
+This document defines the structure and organization of the Donuts monorepo.
 
 ## Monorepo Architecture
 

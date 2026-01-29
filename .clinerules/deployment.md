@@ -1,11 +1,11 @@
 ---
 name: deployment
-description: Deployment guidelines and best practices for Fullstack AgentCore
+description: Deployment guidelines and best practices for Donuts
 ---
 
 # Deployment Guide
 
-This document outlines deployment practices and guidelines for the Fullstack AgentCore project using AWS CDK.
+This document outlines deployment practices and guidelines for the Donuts project using AWS CDK.
 
 ## CDK Basics
 

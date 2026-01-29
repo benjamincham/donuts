@@ -1,8 +1,8 @@
 Language: [English](./README.md) / [Japanese](./README-ja.md)
 
-# Donuts
+# 🍩 Donuts
 
-An AI agent platform built on Amazon Bedrock AgentCore.
+An AI agent platform built on Amazon Bedrock AgentCore. 
 
 ## Overview
 
@@ -15,11 +15,11 @@ Preset agents are also available for immediate use, covering various domains inc
     <tr>
       <td width="50%">
         <img src="./docs/assets/agentchat.geeawa.net_chat.png" alt="Chat Interface" width="100%">
-        <p align="center"><b>Intuitive Chat Interface</b><br/>You can interact with specialized AI agents through a simple UI</p>
+        <p align="center"><b>Agent Chat</b><br/>You can interact with specialized AI agents through a simple UI</p>
       </td>
       <td width="50%">
         <img src="./docs/assets/agentchat.geeawa.net_chat_share_agent.png" alt="Agent Sharing" width="100%">
-        <p align="center"><b>Organization-Wide Agent Sharing</b><br/>You can discover and share custom agents across your team</p>
+        <p align="center"><b>Share Agent</b><br/>You can discover and share custom agents across your team</p>
       </td>
     </tr>
     <tr>
@@ -47,9 +47,23 @@ Preset agents are also available for immediate use, covering various domains inc
 
 ## Architecture
 
+This application uses a fully serverless architecture built on Amazon Bedrock AgentCore. User requests flow from the React frontend through Cognito authentication to the AgentCore Runtime, which orchestrates AI agent execution with tool integration via the AgentCore Gateway.
+
 <div align="center">
   <img src="./docs/donuts-architecture.drawio.png" alt="Architecture Diagram" width="80%">
 </div>
+
+| Layer | Services |
+|-------|----------|
+| Frontend | CloudFront + S3 (React SPA) |
+| Auth | Amazon Cognito (JWT) |
+| API | Lambda + API Gateway (Express.js) |
+| Agent | AgentCore Runtime + Gateway + Memory |
+| Storage | DynamoDB + S3 |
+| Real-time | AppSync Events (WebSocket) |
+| Events | EventBridge Scheduler |
+
+The backend API is responsible for agent management, session persistence, and file operations. AgentCore Runtime executes agents using the Strands Agents SDK (TypeScript), with short-term memory (session history) for conversational context and long-term memory (persistent memory) enabled. Real-time streaming is achieved via AppSync Events, allowing agents to be automatically executed by schedule triggers.
 
 ## Deployment
 
@@ -120,9 +134,6 @@ npm run deploy
 # Deploy to dev environment
 npm run deploy:dev
 
-# Deploy to staging environment
-npm run deploy:stg
-
 # Deploy to production environment
 npm run deploy:prd
 ```
@@ -158,6 +169,4 @@ Contributions are welcome. Please feel free to submit a Pull Request.
 
 ---
 
-<p align="center">
-  <sub><sup>This is an experimental repository for personal use and learning purposes.</sup></sub>
-</p>
+This repository is an experimental sample application and may be updated without considering backward compatibility. For official AgentCore sample code published by AWS, please refer to [fullstack-solution-template-for-agentcore](https://github.com/awslabs/fullstack-solution-template-for-agentcore) or [sample-amazon-bedrock-agentcore-fullstack-webapp](https://github.com/aws-samples/sample-amazon-bedrock-agentcore-fullstack-webapp).

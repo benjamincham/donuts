@@ -1,11 +1,11 @@
 ---
 name: ui-design
-description: UI/UX design guidelines based on Atomic Design principles for Fullstack AgentCore frontend
+description: UI/UX design guidelines based on Atomic Design principles for Donuts frontend
 ---
 
 # UI Design Guide
 
-This document defines the UI/UX design principles and component guidelines for the Fullstack AgentCore frontend, based on Atomic Design methodology.
+This document defines the UI/UX design principles and component guidelines for the Donuts frontend, based on Atomic Design methodology.
 
 ## Design Principles
 

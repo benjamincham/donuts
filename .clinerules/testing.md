@@ -1,11 +1,11 @@
 ---
 name: testing
-description: Testing guidelines and best practices for Fullstack AgentCore
+description: Testing guidelines and best practices for Donuts
 ---
 
 # Testing Guide
 
-This document outlines testing practices, conventions, and guidelines for the Fullstack AgentCore project.
+This document outlines testing practices, conventions, and guidelines for the Donuts project.
 
 ## Local development
 

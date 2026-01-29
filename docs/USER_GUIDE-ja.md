@@ -1,8 +1,8 @@
-# FullStack AgentCore ユーザーガイド
+# Donuts ユーザーガイド
 
 > [🇺🇸 English User Guide is here](./USER_GUIDE.md)
 
-FullStack AgentCoreは、Amazon Bedrockをベースとした強力なAIエージェントプラットフォームです。本ガイドでは、主な機能と使い方を紹介します。
+Donuts は、Amazon Bedrockをベースとした強力なAIエージェントプラットフォームです。本ガイドでは、主な機能と使い方を紹介します。
 
 ## 目次
 
@@ -21,7 +21,7 @@ FullStack AgentCoreは、Amazon Bedrockをベースとした強力なAIエージ
 
 ### チャットインターフェース
 
-FullStack AgentCoreのメイン画面は、シンプルで直感的なチャットインターフェースです。
+Donuts のメイン画面は、シンプルで直感的なチャットインターフェースです。
 
 ![メイン画面](./assets/agentchat.geeawa.net_chat.png)
 
@@ -49,7 +49,7 @@ FullStack AgentCoreのメイン画面は、シンプルで直感的なチャッ�
 
 ### AIエージェント管理
 
-FullStack AgentCoreでは、様々な分野に特化したAIエージェントを選択・作成・カスタマイズできます。
+Donuts では、様々な分野に特化したAIエージェントを選択・作成・カスタマイズできます。
 
 #### エージェントの選択
 
@@ -267,13 +267,3 @@ PDFファイル: /20251019 Context engineering.pdf
 エージェントは会話のコンテキストを記憶し、より自然な対話を実現します。
 - 短期記憶: セッション内の会話内容
 - 長期記憶: ユーザーの好みや過去の情報
-
----
-
-## サポート
-
-ご質問やフィードバックがある場合は、プロジェクトのGitHubリポジトリをご確認ください。
-
----
-
-**最終更新**: 2026-01-05

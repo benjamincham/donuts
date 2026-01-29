@@ -1,8 +1,8 @@
-# FullStack AgentCore User Guide
+# Donuts User Guide
 
 > [🇯🇵 日本語版ユーザーガイドはこちら / Japanese User Guide](./USER_GUIDE-ja.md)
 
-FullStack AgentCore is a powerful AI agent platform built on Amazon Bedrock. This guide introduces the main features and how to use them.
+Donuts is a powerful AI agent platform built on Amazon Bedrock. This guide introduces the main features and how to use them.
 
 ## Table of Contents
 
@@ -21,7 +21,7 @@ FullStack AgentCore is a powerful AI agent platform built on Amazon Bedrock. Thi
 
 ### Chat Interface
 
-The main screen of FullStack AgentCore features a simple and intuitive chat interface.
+The main screen of Donuts features a simple and intuitive chat interface.
 
 ![Main Screen](./assets/agentchat.geeawa.net_chat.png)
 
@@ -49,7 +49,7 @@ Select the AI model from the dropdown menu at the bottom of the screen.
 
 ### AI Agent Management
 
-FullStack AgentCore allows you to select, create, and customize AI agents specialized in various domains.
+Donuts allows you to select, create, and customize AI agents specialized in various domains.
 
 #### Selecting an Agent
 
@@ -268,12 +268,3 @@ Agents remember conversation context for more natural dialogue.
 - Short-term memory: Conversation content within the session
 - Long-term memory: User preferences and past information
 
----
-
-## Support
-
-If you have any questions or feedback, please check the project's GitHub repository.
-
----
-
-**Last Updated**: 2026-01-05

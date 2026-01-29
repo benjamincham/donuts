@@ -1,6 +1,6 @@
 Language: [English](./README.md) / [Japanese](./README-ja.md)
 
-# Donuts
+# 🍩 Donuts
 
 Amazon Bedrock AgentCore を基盤とした AI エージェントプラットフォームです。
 
@@ -15,17 +15,17 @@ Donutsは、チームが AI エージェントを**自由に作成・カスタ�
     <tr>
       <td width="50%">
         <img src="./docs/assets/agentchat.geeawa.net_chat.png" alt="チャットインターフェース" width="100%">
-        <p align="center"><b>チャットインターフェース</b><br/>専門的なAIエージェントとシンプルなUIで対話できます</p>
+        <p align="center"><b>チャット</b><br/>専門的な AI エージェントとシンプルな UI で対話できます</p>
       </td>
       <td width="50%">
         <img src="./docs/assets/agentchat.geeawa.net_chat_share_agent.png" alt="エージェント共有" width="100%">
-        <p align="center"><b>組織でのエージェント共有</b><br/>カスタムエージェントをチーム内で発見・共有できます</p>
+        <p align="center"><b>エージェントの共有</b><br/>カスタムエージェントをチーム内で発見・共有できます</p>
       </td>
     </tr>
     <tr>
       <td width="50%">
         <img src="./docs/assets/agentchat.geeawa.net_event_integration.png" alt="イベント連携" width="100%">
-        <p align="center"><b>イベント駆動で実行</b><br/>スケジュールや外部イベントでエージェントを自動実行できます</p>
+        <p align="center"><b>イベント駆動</b><br/>スケジュールや外部イベントでエージェントを自動実行できます</p>
       </td>
       <td width="50%">
         <img src="./docs/assets/agentchat.geeawa.net_tools.png" alt="ツール" width="100%">
@@ -47,9 +47,23 @@ Donutsは、チームが AI エージェントを**自由に作成・カスタ�
 
 ## アーキテクチャ
 
+本アプリケーションは Amazon Bedrock AgentCore を基盤としたフルサーバーレスアーキテクチャを採用しています。ユーザーリクエストは React フロントエンドから Cognito 認証を経て AgentCore Runtime に到達し、AgentCore Gateway 経由のツール統合とともに AI エージェントが稼働します。
+
 <div align="center">
   <img src="./docs/donuts-architecture.drawio.png" alt="アーキテクチャ図" width="80%">
 </div>
+
+| レイヤー | サービス |
+|---------|---------|
+| フロントエンド | CloudFront + S3 (React SPA) |
+| 認証 | Amazon Cognito (JWT) |
+| API | Lambda + API Gateway (Express.js) |
+| エージェント | AgentCore Runtime + Gateway + Memory |
+| ストレージ | DynamoDB + S3 |
+| リアルタイム | AppSync Events (WebSocket) |
+| イベント | EventBridge Scheduler |
+
+バックエンド API はエージェント管理、セッション永続化、ファイル操作などを担当します。AgentCore Runtime は Strands Agents SDK (TypeScript) を使用してエージェントを実行し、会話コンテキストのための短期記憶（セッション履歴）および長期記憶（永続メモリ）が有効化されています。リアルタイムストリーミングは AppSync Events によって実現され、スケジュールトリガーによって自動的にエージェントを実行することが可能です。
 
 ## デプロイ
 
@@ -120,9 +134,6 @@ npm run deploy
 # 開発環境にデプロイ
 npm run deploy:dev
 
-# ステージング環境にデプロイ
-npm run deploy:stg
-
 # 本番環境にデプロイ
 npm run deploy:prd
 ```
@@ -158,6 +169,5 @@ npm run deploy:prd
 
 ---
 
-<p align="center">
-  <sub><sup>このリポジトリは個人使用と学習目的の実験的なプロジェクトです。</sup></sub>
-</p>
+
+このリポジトリは実験的なサンプルアプリケーションであり、後方互換性を考慮せず更新される可能性があります。AWS が公式で公開している AgentCore のサンプルコードは [fullstack-solution-template-for-agentcore](https://github.com/awslabs/fullstack-solution-template-for-agentcore) や [sample-amazon-bedrock-agentcore-fullstack-webapp](https://github.com/aws-samples/sample-amazon-bedrock-agentcore-fullstack-webapp) をご覧ください。

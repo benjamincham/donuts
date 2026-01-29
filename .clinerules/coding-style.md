@@ -1,11 +1,11 @@
 ---
 name: coding-style
-description: Code style guidelines and conventions for the Fullstack AgentCore project
+description: Code style guidelines and conventions for the Donuts project
 ---
 
 # Coding Style Guide
 
-This document defines the code style and conventions for the Fullstack AgentCore project.
+This document defines the code style and conventions for the Donuts project.
 
 ## Language
 

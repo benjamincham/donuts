@@ -450,6 +450,7 @@ export class S3WorkspaceSync extends EventEmitter {
       const entries = fs.readdirSync(dir, { withFileTypes: true });
 
       for (const entry of entries) {
+        // nosemgrep: path-join-resolve-traversal - entry.name comes from fs.readdirSync, not user input
         const fullPath = path.join(dir, entry.name);
 
         if (entry.isDirectory()) {
@@ -489,6 +490,7 @@ export class S3WorkspaceSync extends EventEmitter {
       const entries = fs.readdirSync(dir, { withFileTypes: true });
 
       for (const entry of entries) {
+        // nosemgrep: path-join-resolve-traversal - entry.name comes from fs.readdirSync, not user input
         const fullPath = path.join(dir, entry.name);
         const relativePath = path.relative(this.workspaceDir, fullPath);
 

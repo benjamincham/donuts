@@ -69,6 +69,7 @@ export class SyncIgnoreFilter {
    * Load custom patterns from a `.syncignore` file in the given workspace directory.
    */
   loadFromWorkspace(workspaceDir: string): void {
+    // nosemgrep: path-join-resolve-traversal - workspaceDir is controlled by server configuration, not user input
     const syncignorePath = path.join(workspaceDir, '.syncignore');
 
     if (!fs.existsSync(syncignorePath)) {

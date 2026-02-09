@@ -63,11 +63,12 @@ function encodeAgentUrl(url: string): string {
 }
 
 /**
- * Make request to Agent Service
+ * Make request to Agent Service with automatic 401 retry
  * @param options - Fetch options
+ * @param isRetry - Whether this is a retry attempt (internal use)
  * @returns Response object (not JSON, for streaming support)
  */
-export async function agentRequest(options: RequestInit = {}): Promise<Response> {
+export async function agentRequest(options: RequestInit = {}, isRetry = false): Promise<Response> {
   const method = options.method || 'POST';
   const url = encodeAgentUrl(getAgentEndpoint());
 
@@ -83,12 +84,24 @@ export async function agentRequest(options: RequestInit = {}): Promise<Response>
 
     logRequestSuccess(method, url, response.status);
 
-    // Check for authentication errors
+    // On 401, attempt token refresh and retry once
+    if (response.status === 401 && !isRetry) {
+      console.warn(`⚠️ 401 on agent request, attempting token refresh and retry...`);
+      const error = new ApiError('Unauthorized', 401, 'Unauthorized', {
+        message: i18n.t('error.unauthorized'),
+      });
+      await handleGlobalError(error); // This triggers token refresh
+
+      // Retry with fresh token
+      return agentRequest(options, true);
+    }
+
+    // If still 401 on retry, throw and force logout
     if (response.status === 401) {
       const error = new ApiError('Unauthorized', 401, 'Unauthorized', {
         message: i18n.t('error.unauthorized'),
       });
-      await handleGlobalError(error);
+      await handleGlobalError(error, true); // skipRefreshAttempt = true
       throw error;
     }
 
@@ -96,9 +109,9 @@ export async function agentRequest(options: RequestInit = {}): Promise<Response>
   } catch (error) {
     logRequestError(method, url, error);
 
-    // Handle global errors if not already handled
+    // Handle global errors (skip refresh on retry to avoid infinite loop)
     if (error instanceof Error && error.message !== 'Unauthorized') {
-      await handleGlobalError(error);
+      await handleGlobalError(error, isRetry);
     }
 
     throw error;

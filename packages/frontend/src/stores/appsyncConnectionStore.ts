@@ -20,6 +20,7 @@ import { subscribeWithSelector } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore } from './authStore';
 import { appsyncEventsConfig } from '../config/appsync-events';
+import { getValidAccessToken } from '../lib/cognito';
 import {
   buildHttpHostFromEndpoint,
   createAuthProtocol,
@@ -109,7 +110,7 @@ export const useAppSyncConnectionStore = create<AppSyncConnectionState>()(
     /**
      * Connect to AppSync Events
      */
-    connect: () => {
+    connect: async () => {
       const state = get();
 
       // Prevent multiple simultaneous connection attempts
@@ -132,12 +133,11 @@ export const useAppSyncConnectionStore = create<AppSyncConnectionState>()(
         return;
       }
 
-      // Get auth from auth store
-      const authState = useAuthStore.getState();
-      const idToken = authState.user?.idToken;
-      const userId = authState.user?.userId;
+      // Get fresh access token (auto-refreshes if expired)
+      const accessToken = await getValidAccessToken();
+      const userId = useAuthStore.getState().user?.userId;
 
-      if (!idToken || !userId) {
+      if (!accessToken || !userId) {
         console.log('🔌 No auth token available, skipping');
         return;
       }
@@ -152,7 +152,7 @@ export const useAppSyncConnectionStore = create<AppSyncConnectionState>()(
       try {
         const endpoint = appsyncEventsConfig.realtimeEndpoint;
         const newHttpHost = buildHttpHostFromEndpoint(endpoint);
-        const authProtocol = createAuthProtocol(idToken, newHttpHost);
+        const authProtocol = createAuthProtocol(accessToken, newHttpHost);
 
         console.log('🔌 Connecting to AppSync Events (shared connection)');
 
@@ -198,35 +198,42 @@ export const useAppSyncConnectionStore = create<AppSyncConnectionState>()(
                  * We skip subscriptions that are already pending to avoid
                  * DuplicatedOperationError from AppSync.
                  */
-                currentState._channelMap.forEach((channel, subscriptionId) => {
-                  // Skip if already pending (subscription was sent before ack)
-                  if (currentState._pendingSubscriptions.has(subscriptionId)) {
-                    console.log(`🔌 Skipping re-subscribe (already pending): ${subscriptionId}`);
+                // Get fresh token for re-subscriptions
+                getValidAccessToken().then((freshToken) => {
+                  if (!freshToken) {
+                    console.log('🔌 No valid token for re-subscription');
                     return;
                   }
 
-                  const handler = currentState._subscriptionHandlers.get(subscriptionId);
-                  if (handler && ws.readyState === WebSocket.OPEN) {
-                    console.log(`🔌 Re-subscribing after reconnect: ${subscriptionId}`);
-                    const authState = useAuthStore.getState();
+                  currentState._channelMap.forEach((channel, subscriptionId) => {
+                    // Skip if already pending (subscription was sent before ack)
+                    if (currentState._pendingSubscriptions.has(subscriptionId)) {
+                      console.log(`🔌 Skipping re-subscribe (already pending): ${subscriptionId}`);
+                      return;
+                    }
 
-                    // Mark as pending
-                    const pending = new Set(get()._pendingSubscriptions);
-                    pending.add(subscriptionId);
-                    set({ _pendingSubscriptions: pending });
+                    const handler = currentState._subscriptionHandlers.get(subscriptionId);
+                    if (handler && ws.readyState === WebSocket.OPEN) {
+                      console.log(`🔌 Re-subscribing after reconnect: ${subscriptionId}`);
 
-                    ws.send(
-                      JSON.stringify({
-                        type: 'subscribe',
-                        id: subscriptionId,
-                        channel,
-                        authorization: {
-                          Authorization: authState.user?.idToken,
-                          host: currentState.httpHost,
-                        },
-                      })
-                    );
-                  }
+                      // Mark as pending
+                      const pending = new Set(get()._pendingSubscriptions);
+                      pending.add(subscriptionId);
+                      set({ _pendingSubscriptions: pending });
+
+                      ws.send(
+                        JSON.stringify({
+                          type: 'subscribe',
+                          id: subscriptionId,
+                          channel,
+                          authorization: {
+                            Authorization: freshToken,
+                            host: currentState.httpHost,
+                          },
+                        })
+                      );
+                    }
+                  });
                 });
                 break;
               }
@@ -358,7 +365,7 @@ export const useAppSyncConnectionStore = create<AppSyncConnectionState>()(
     /**
      * Subscribe to a channel
      */
-    subscribe: (channel: string, subscriptionId: string, handler: SubscriptionHandler) => {
+    subscribe: async (channel: string, subscriptionId: string, handler: SubscriptionHandler) => {
       const state = get();
 
       // Register handler
@@ -393,10 +400,10 @@ export const useAppSyncConnectionStore = create<AppSyncConnectionState>()(
         return;
       }
 
-      const authState = useAuthStore.getState();
-      const idToken = authState.user?.idToken;
+      // Get fresh access token (auto-refreshes if expired)
+      const accessToken = await getValidAccessToken();
 
-      if (!idToken) {
+      if (!accessToken) {
         console.log('🔌 No auth token, cannot subscribe');
         return;
       }
@@ -414,7 +421,7 @@ export const useAppSyncConnectionStore = create<AppSyncConnectionState>()(
           id: subscriptionId,
           channel,
           authorization: {
-            Authorization: idToken,
+            Authorization: accessToken,
             host: state.httpHost,
           },
         })

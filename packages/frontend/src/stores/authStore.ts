@@ -66,7 +66,7 @@ export const useAuthStore = create<AuthStore>()(
               error: null,
             });
           } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : '認証に失敗しました';
+            const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
             set({
               user: null,
               isAuthenticated: false,
@@ -96,7 +96,7 @@ export const useAuthStore = create<AuthStore>()(
             });
           } catch (error) {
             console.error('Logout error:', error);
-            // ログアウトエラーでも状態はクリアする
+            // Clear state even on logout error
             set({
               user: null,
               isAuthenticated: false,
@@ -136,8 +136,7 @@ export const useAuthStore = create<AuthStore>()(
               pendingUsername: username,
             });
           } catch (error) {
-            const errorMessage =
-              error instanceof Error ? error.message : 'サインアップに失敗しました';
+            const errorMessage = error instanceof Error ? error.message : 'Sign up failed';
             set({
               isLoading: false,
               error: errorMessage,
@@ -161,7 +160,7 @@ export const useAuthStore = create<AuthStore>()(
               pendingUsername: null,
             });
           } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : '確認に失敗しました';
+            const errorMessage = error instanceof Error ? error.message : 'Confirmation failed';
             set({
               isLoading: false,
               error: errorMessage,
@@ -181,7 +180,7 @@ export const useAuthStore = create<AuthStore>()(
               error: null,
             });
           } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : '再送に失敗しました';
+            const errorMessage = error instanceof Error ? error.message : 'Failed to resend code';
             set({
               isLoading: false,
               error: errorMessage,
@@ -193,7 +192,7 @@ export const useAuthStore = create<AuthStore>()(
         completeNewPassword: async (newPassword: string) => {
           const { pendingCognitoUser } = get();
           if (!pendingCognitoUser) {
-            throw new Error('パスワード変更のセッションが見つかりません');
+            throw new Error('Password change session not found');
           }
 
           try {
@@ -214,7 +213,7 @@ export const useAuthStore = create<AuthStore>()(
             });
           } catch (error) {
             const errorMessage =
-              error instanceof Error ? error.message : 'パスワードの変更に失敗しました';
+              error instanceof Error ? error.message : 'Failed to change password';
             set({
               isLoading: false,
               error: errorMessage,

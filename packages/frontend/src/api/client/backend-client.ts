@@ -3,7 +3,8 @@
  * HTTP client for Backend Service (VITE_BACKEND_URL)
  */
 
-import { createAuthHeaders, handleApiError, normalizeBaseUrl } from './base-client';
+import { createAuthHeaders, handleApiError, normalizeBaseUrl, ApiError } from './base-client';
+import { handleGlobalError } from '../../utils/errorHandler';
 
 /**
  * Check if API debugging is enabled
@@ -47,12 +48,17 @@ const getBaseUrl = (): string => {
 };
 
 /**
- * Generic backend API request
+ * Generic backend API request with automatic 401 retry
  * @param endpoint - API endpoint (e.g., '/agents')
  * @param options - Fetch options
+ * @param isRetry - Whether this is a retry attempt (internal use)
  * @returns Response data
  */
-export async function backendRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+export async function backendRequest<T>(
+  endpoint: string,
+  options: RequestInit = {},
+  isRetry = false
+): Promise<T> {
   const method = options.method || 'GET';
 
   try {
@@ -66,6 +72,16 @@ export async function backendRequest<T>(endpoint: string, options: RequestInit =
       headers: { ...headers, ...(options.headers as Record<string, string>) },
     });
 
+    // On 401, attempt token refresh and retry once
+    if (response.status === 401 && !isRetry) {
+      console.warn(`⚠️ 401 on ${method} ${endpoint}, attempting token refresh and retry...`);
+      const error = new ApiError('Unauthorized', 401, 'Unauthorized');
+      await handleGlobalError(error); // This triggers token refresh
+
+      // Retry with fresh token
+      return backendRequest<T>(endpoint, options, true);
+    }
+
     if (!response.ok) {
       await handleApiError(response);
     }
@@ -76,9 +92,8 @@ export async function backendRequest<T>(endpoint: string, options: RequestInit =
   } catch (error) {
     logRequestError(method, endpoint, error);
 
-    // Import and handle global errors
-    const { handleGlobalError } = await import('../../utils/errorHandler');
-    await handleGlobalError(error);
+    // Handle global errors (skip refresh on retry to avoid infinite loop)
+    await handleGlobalError(error, isRetry);
 
     throw error;
   }

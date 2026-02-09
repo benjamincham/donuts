@@ -99,7 +99,7 @@ export const ToolSelector: React.FC<ToolSelectorProps> = ({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           disabled={disabled || isLoading}
-          className="w-full pl-10 pr-4 py-2 border border-border-strong rounded-lg text-sm focus:ring-2 focus:ring-border-focus focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+          className="w-full pl-10 pr-4 py-2 border border-border-strong rounded-lg text-sm bg-surface-primary text-fg-default placeholder:text-fg-disabled focus:ring-2 focus:ring-border-focus focus:border-transparent disabled:bg-surface-secondary disabled:cursor-not-allowed"
         />
         {searchQuery && (
           <button
@@ -158,7 +158,7 @@ export const ToolSelector: React.FC<ToolSelectorProps> = ({
                     className={`flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-200 ${
                       isSelected
                         ? 'bg-action-primary text-white border-1 border-blue-500 shadow-sm'
-                        : 'bg-gray-100 text-fg-secondary border border-border hover:border-feedback-info-border hover:bg-feedback-info-bg'
+                        : 'bg-surface-secondary text-fg-secondary border border-border hover:border-feedback-info-border hover:bg-feedback-info-bg'
                     }`}
                   >
                     {getToolIcon(tool.name, 'w-3 h-3')}
@@ -181,20 +181,20 @@ export const ToolSelector: React.FC<ToolSelectorProps> = ({
       {/* 選択済みツールの概要 */}
       {selectedTools.length > 0 && (
         <div className="mt-4 p-3 bg-feedback-info-bg border border-feedback-info-border rounded-lg">
-          <h4 className="text-sm font-medium text-action-primary mb-2">
+          <h4 className="text-sm font-medium text-feedback-info mb-2">
             {t('tool.selector.selectedToolsTitle')}
           </h4>
           <div className="flex flex-wrap gap-1">
             {selectedTools.map((toolName) => (
               <span
                 key={toolName}
-                className="inline-flex items-center px-2 py-1 rounded-md bg-blue-100 text-action-primary text-xs"
+                className="inline-flex items-center px-2 py-1 rounded-md bg-feedback-info-bg text-feedback-info text-xs border border-feedback-info-border"
               >
                 {toolName}
                 {!disabled && (
                   <button
                     onClick={() => toggleTool(toolName)}
-                    className="ml-1 text-action-primary hover:text-action-primary"
+                    className="ml-1 text-feedback-info hover:text-fg-default"
                   >
                     <X className="w-3 h-3" />
                   </button>

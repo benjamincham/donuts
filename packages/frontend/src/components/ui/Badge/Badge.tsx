@@ -18,7 +18,7 @@ export interface BadgeProps {
 }
 
 const variantStyles: Record<NonNullable<BadgeProps['variant']>, string> = {
-  default: 'bg-gray-100 text-fg-secondary',
+  default: 'bg-surface-secondary text-fg-secondary',
   success: 'bg-feedback-success-bg text-feedback-success',
   warning: 'bg-feedback-warning-bg text-feedback-warning',
   danger: 'bg-feedback-error-bg text-feedback-error',

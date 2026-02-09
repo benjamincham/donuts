@@ -165,7 +165,7 @@ function StorageItemComponent({
                   e.stopPropagation();
                   onSetWorkingDirectory(item.path);
                 }}
-                className="p-2 text-fg-disabled hover:text-fg-secondary hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 text-fg-disabled hover:text-fg-secondary hover:bg-surface-secondary rounded-lg transition-colors"
                 title={t('storage.setAsWorkingDirectory')}
               >
                 <FolderCog className="w-4 h-4" />
@@ -769,14 +769,14 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
               position="bottom"
               width="480px"
             >
-              <button className="w-6 h-6 rounded-full hover:bg-gray-100 flex items-center justify-center text-fg-secondary transition-colors">
+              <button className="w-6 h-6 rounded-full hover:bg-surface-secondary flex items-center justify-center text-fg-secondary transition-colors">
                 <HelpCircle className="w-4 h-4" />
               </button>
             </Tooltip>
           </div>
           <button
             onClick={onClose}
-            className="rounded-md p-2 text-fg-disabled hover:text-fg-secondary hover:bg-gray-100 transition-colors"
+            className="rounded-md p-2 text-fg-disabled hover:text-fg-secondary hover:bg-surface-secondary transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -794,7 +794,7 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-fg-secondary hover:text-fg-default hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-fg-secondary hover:text-fg-default hover:bg-surface-secondary rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <Upload className="w-3.5 h-3.5" />
             <span>{t('storage.upload')}</span>
@@ -802,7 +802,7 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
 
           <button
             onClick={() => setShowNewDirectoryInput(true)}
-            className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-fg-secondary hover:text-fg-default hover:bg-gray-100 rounded transition-colors"
+            className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-fg-secondary hover:text-fg-default hover:bg-surface-secondary rounded transition-colors"
           >
             <FolderPlus className="w-3.5 h-3.5" />
             <span>{t('storage.newFolder')}</span>
@@ -811,7 +811,7 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
           <button
             onClick={() => setAgentWorkingDirectory(currentPath)}
             disabled={agentWorkingDirectory === currentPath}
-            className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-fg-secondary hover:text-fg-default hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-fg-secondary hover:text-fg-default hover:bg-surface-secondary rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <FolderCog className="w-3.5 h-3.5" />
             <span className="hidden md:inline">{t('storage.setAsWorkingDirectory')}</span>
@@ -840,7 +840,7 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
               </span>
               <span className="ml-2">{uploadProgress}%</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-border rounded-full h-2">
               <div
                 className="bg-action-primary h-2 rounded-full transition-all duration-300"
                 style={{ width: `${uploadProgress}%` }}
@@ -874,11 +874,11 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
         {/* 右カラム: ファイル一覧 */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* パンくずナビゲーション */}
-          <div className="px-4 md:px-6 py-3 border-b border-border bg-white">
+          <div className="px-4 md:px-6 py-3 border-b border-border bg-surface-primary">
             <div className="flex flex-wrap items-center gap-1 text-sm overflow-x-auto">
               <button
                 onClick={handleNavigateToRoot}
-                className="flex items-center gap-1 px-2 py-1 text-fg-secondary hover:text-fg-default hover:bg-gray-100 rounded transition-colors whitespace-nowrap"
+                className="flex items-center gap-1 px-2 py-1 text-fg-secondary hover:text-fg-default hover:bg-surface-secondary rounded transition-colors whitespace-nowrap"
               >
                 <Home className="w-4 h-4 flex-shrink-0" />
                 <span>{t('storage.root')}</span>
@@ -911,7 +911,7 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
                     <ChevronRight className="w-4 h-4 text-fg-disabled flex-shrink-0" />
                     <button
                       onClick={() => handleNavigate(segmentPath)}
-                      className="px-2 py-1 text-fg-secondary hover:text-fg-default hover:bg-gray-100 rounded transition-colors truncate max-w-[120px] sm:max-w-none"
+                      className="px-2 py-1 text-fg-secondary hover:text-fg-default hover:bg-surface-secondary rounded transition-colors truncate max-w-[120px] sm:max-w-none"
                     >
                       {segment}
                     </button>
@@ -1042,7 +1042,7 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
         {contextMenu && (
           <div
             ref={contextMenuRef}
-            className="fixed bg-white rounded-lg shadow-lg border border-border py-1 z-50 min-w-[160px]"
+            className="fixed bg-surface-primary rounded-lg shadow-lg border border-border py-1 z-50 min-w-[160px]"
             style={{
               left: `${Math.min(contextMenu.x, window.innerWidth - 180)}px`,
               top: `${Math.min(contextMenu.y, window.innerHeight - 200)}px`,
@@ -1051,7 +1051,7 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
             {contextMenu.type === 'file' ? (
               <button
                 onClick={handleContextDownload}
-                className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 flex items-center gap-2 transition-colors"
+                className="w-full px-4 py-2 text-sm text-left hover:bg-surface-secondary flex items-center gap-2 transition-colors"
               >
                 <Download className="w-4 h-4 text-fg-secondary" />
                 <span className="text-fg-default">{t('storage.download')}</span>
@@ -1063,14 +1063,14 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
                     setAgentWorkingDirectory(contextMenu.path);
                     setContextMenu(null);
                   }}
-                  className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 flex items-center gap-2 transition-colors"
+                  className="w-full px-4 py-2 text-sm text-left hover:bg-surface-secondary flex items-center gap-2 transition-colors"
                 >
                   <FolderCog className="w-4 h-4 text-fg-secondary" />
                   <span className="text-fg-default">{t('storage.setAsWorkingDirectory')}</span>
                 </button>
                 <button
                   onClick={handleContextFolderDownload}
-                  className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 flex items-center gap-2 transition-colors"
+                  className="w-full px-4 py-2 text-sm text-left hover:bg-surface-secondary flex items-center gap-2 transition-colors"
                 >
                   <Download className="w-4 h-4 text-fg-secondary" />
                   <span className="text-fg-default">{t('storage.downloadFolder')}</span>
@@ -1079,7 +1079,7 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
             )}
             <button
               onClick={handleContextDelete}
-              className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 flex items-center gap-2 transition-colors"
+              className="w-full px-4 py-2 text-sm text-left hover:bg-surface-secondary flex items-center gap-2 transition-colors"
             >
               <Trash2 className="w-4 h-4 text-fg-secondary" />
               <span className="text-fg-default">{t('common.delete')}</span>
@@ -1087,7 +1087,7 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
             <div className="border-t border-border my-1" />
             <button
               onClick={() => handleCopyPath(contextMenu.path, () => setContextMenu(null))}
-              className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 flex items-center gap-2 transition-colors"
+              className="w-full px-4 py-2 text-sm text-left hover:bg-surface-secondary flex items-center gap-2 transition-colors"
             >
               {copiedPath === contextMenu.path ? (
                 <>
@@ -1108,7 +1108,7 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
         {folderContextMenu && (
           <div
             ref={folderContextMenuRef}
-            className="fixed bg-white rounded-lg shadow-lg border border-border py-1 z-50 min-w-[160px]"
+            className="fixed bg-surface-primary rounded-lg shadow-lg border border-border py-1 z-50 min-w-[160px]"
             style={{
               left: `${Math.min(folderContextMenu.x, window.innerWidth - 180)}px`,
               top: `${Math.min(folderContextMenu.y, window.innerHeight - 200)}px`,
@@ -1119,21 +1119,21 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
                 setAgentWorkingDirectory(folderContextMenu.path);
                 setFolderContextMenu(null);
               }}
-              className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 flex items-center gap-2 transition-colors"
+              className="w-full px-4 py-2 text-sm text-left hover:bg-surface-secondary flex items-center gap-2 transition-colors"
             >
               <FolderCog className="w-4 h-4 text-fg-secondary" />
               <span className="text-fg-default">{t('storage.setAsWorkingDirectory')}</span>
             </button>
             <button
               onClick={handleTreeFolderDownload}
-              className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 flex items-center gap-2 transition-colors"
+              className="w-full px-4 py-2 text-sm text-left hover:bg-surface-secondary flex items-center gap-2 transition-colors"
             >
               <Download className="w-4 h-4 text-fg-secondary" />
               <span className="text-fg-default">{t('storage.downloadFolder')}</span>
             </button>
             <button
               onClick={handleFolderDelete}
-              className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 flex items-center gap-2 transition-colors"
+              className="w-full px-4 py-2 text-sm text-left hover:bg-surface-secondary flex items-center gap-2 transition-colors"
             >
               <Trash2 className="w-4 h-4 text-fg-secondary" />
               <span className="text-fg-default">{t('common.delete')}</span>
@@ -1143,7 +1143,7 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
               onClick={() =>
                 handleCopyPath(folderContextMenu.path, () => setFolderContextMenu(null))
               }
-              className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 flex items-center gap-2 transition-colors"
+              className="w-full px-4 py-2 text-sm text-left hover:bg-surface-secondary flex items-center gap-2 transition-colors"
             >
               {copiedPath === folderContextMenu.path ? (
                 <>
@@ -1167,7 +1167,7 @@ export function StorageManagementModal({ isOpen, onClose }: StorageManagementMod
           <p className="text-xs text-fg-muted">{t('storage.itemCount', { count: items.length })}</p>
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-fg-secondary bg-white border border-border-strong rounded-md hover:bg-surface-secondary transition-colors"
+            className="px-4 py-2 text-sm font-medium text-fg-secondary bg-surface-primary border border-border-strong rounded-md hover:bg-surface-secondary transition-colors"
           >
             {t('common.close')}
           </button>

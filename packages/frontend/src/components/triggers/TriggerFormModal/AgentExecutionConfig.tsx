@@ -111,7 +111,7 @@ export function AgentExecutionConfig({
             type="button"
             onClick={() => !disabled && setIsModelSelectorOpen(!isModelSelectorOpen)}
             disabled={disabled}
-            className="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-fg-default bg-white border border-border-strong rounded-lg hover:bg-surface-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-fg-default bg-surface-primary border border-border-strong rounded-lg hover:bg-surface-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <Sparkles className="w-4 h-4 text-fg-disabled flex-shrink-0" />
@@ -134,7 +134,7 @@ export function AgentExecutionConfig({
           </button>
 
           {isModelSelectorOpen && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-border py-1 z-50 max-h-64 overflow-y-auto">
+            <div className="absolute top-full left-0 right-0 mt-1 bg-surface-primary rounded-lg shadow-lg border border-border py-1 z-50 max-h-64 overflow-y-auto">
               <button
                 type="button"
                 onClick={handleClearModel}
@@ -183,7 +183,7 @@ export function AgentExecutionConfig({
             type="button"
             onClick={() => !disabled && setIsDirectorySelectorOpen(!isDirectorySelectorOpen)}
             disabled={disabled}
-            className="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-fg-default bg-white border border-border-strong rounded-lg hover:bg-surface-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-fg-default bg-surface-primary border border-border-strong rounded-lg hover:bg-surface-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <FolderCog className="w-4 h-4 text-fg-disabled flex-shrink-0" />
@@ -201,7 +201,7 @@ export function AgentExecutionConfig({
           </button>
 
           {isDirectorySelectorOpen && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-border py-1 z-50 max-h-64 overflow-y-auto">
+            <div className="absolute top-full left-0 right-0 mt-1 bg-surface-primary rounded-lg shadow-lg border border-border py-1 z-50 max-h-64 overflow-y-auto">
               <button
                 type="button"
                 onClick={handleClearDirectory}

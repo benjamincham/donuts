@@ -99,8 +99,8 @@ export const IconPicker: React.FC<IconPickerProps> = ({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={cn(
-          'w-11 h-11 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors',
-          !disabled && 'hover:bg-gray-200 cursor-pointer',
+          'w-11 h-11 bg-surface-secondary rounded-lg flex items-center justify-center flex-shrink-0 transition-colors',
+          !disabled && 'hover:bg-border cursor-pointer',
           disabled && 'opacity-50 cursor-not-allowed',
           isOpen && 'ring-2 ring-blue-500'
         )}
@@ -111,7 +111,7 @@ export const IconPicker: React.FC<IconPickerProps> = ({
 
       {/* ポップオーバー */}
       {isOpen && (
-        <div className="absolute top-14 left-0 z-50 w-[520px] bg-white rounded-xl shadow-2xl border border-border overflow-hidden">
+        <div className="absolute top-14 left-0 z-50 w-[520px] bg-surface-primary rounded-xl shadow-2xl border border-border overflow-hidden">
           {/* 検索バー */}
           <div className="p-3 border-b border-border bg-surface-secondary">
             <div className="relative">
@@ -122,7 +122,7 @@ export const IconPicker: React.FC<IconPickerProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('common.searchIconsPlaceholder')}
-                className="w-full pl-9 pr-9 py-2 text-sm border border-border-strong rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-9 pr-9 py-2 text-sm border border-border-strong rounded-lg bg-surface-primary text-fg-default focus:ring-2 focus:ring-border-focus focus:border-transparent"
               />
               {searchQuery && (
                 <button
@@ -178,7 +178,7 @@ export const IconPicker: React.FC<IconPickerProps> = ({
                               'w-14 h-14 flex flex-col items-center justify-center rounded-lg transition-all group',
                               isSelected
                                 ? 'bg-blue-100 text-action-primary ring-2 ring-blue-500'
-                                : 'hover:bg-gray-100 text-fg-secondary hover:text-fg-default'
+                                : 'hover:bg-surface-secondary text-fg-secondary hover:text-fg-default'
                             )}
                           >
                             <IconComponent className="w-5 h-5 flex-shrink-0" />

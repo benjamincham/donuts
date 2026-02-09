@@ -55,7 +55,7 @@ export const ModelSelector: React.FC = () => {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute bottom-full left-0 mb-2 w-72 bg-white rounded-xl shadow-lg border border-border py-2 z-50">
+        <div className="absolute bottom-full left-0 mb-2 w-72 bg-surface-primary rounded-xl shadow-lg border border-border py-2 z-50">
           <div className="max-h-64 overflow-y-auto">
             {AVAILABLE_MODELS.map((model) => (
               <button

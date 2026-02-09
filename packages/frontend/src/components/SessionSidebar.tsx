@@ -87,7 +87,7 @@ function SessionItem({ session, isActive, isNew = false, onDeleteRequest }: Sess
         to={`/chat/${session.sessionId}`}
         className={`
           block w-full text-left p-2 pr-8 rounded-lg transition-all duration-200 no-underline
-          ${isActive ? 'bg-gray-100' : 'hover:bg-gray-100'}
+          ${isActive ? 'bg-surface-secondary' : 'hover:bg-surface-secondary'}
           ${isNew ? 'animate-subtle-fade-in' : ''}
         `}
       >
@@ -116,7 +116,7 @@ function SessionItem({ session, isActive, isNew = false, onDeleteRequest }: Sess
         onClick={handleMenuClick}
         className={`
           absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded
-          text-fg-disabled hover:text-fg-secondary hover:bg-gray-200
+          text-fg-disabled hover:text-fg-secondary hover:bg-border
           transition-opacity duration-200
           ${isMenuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
         `}
@@ -129,7 +129,7 @@ function SessionItem({ session, isActive, isNew = false, onDeleteRequest }: Sess
       {isMenuOpen && (
         <div
           ref={menuRef}
-          className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-border py-1 z-50 min-w-[120px]"
+          className="absolute right-0 top-full mt-1 bg-surface-primary rounded-lg shadow-lg border border-border py-1 z-50 min-w-[120px]"
         >
           <button
             onClick={handleDeleteClick}
@@ -329,10 +329,12 @@ export function SessionSidebar() {
 
   return (
     <div
-      className={`h-full bg-white border-r border-border flex flex-col ${shouldShowExpanded ? 'w-80' : 'w-16'}`}
+      className={`h-full bg-surface-primary border-r border-border flex flex-col ${shouldShowExpanded ? 'w-80' : 'w-16'}`}
     >
       {/* Header */}
-      <div className={`p-4 ${shouldShowExpanded ? 'border-b border-border' : ''} bg-white`}>
+      <div
+        className={`p-4 ${shouldShowExpanded ? 'border-b border-border' : ''} bg-surface-primary`}
+      >
         <div
           className={`flex items-center mb-3 ${shouldShowExpanded ? 'justify-between' : 'justify-center'}`}
         >
@@ -352,7 +354,7 @@ export function SessionSidebar() {
               {/* × button on mobile, PanelRight button on desktop */}
               <button
                 onClick={handleToggleSidebar}
-                className="p-2 text-fg-secondary hover:text-fg-default hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 text-fg-secondary hover:text-fg-default hover:bg-surface-secondary rounded-lg transition-colors"
                 title={isMobileView ? 'Close sidebar' : 'Close sidebar'}
               >
                 {isMobileView ? <X className="w-5 h-5" /> : <PanelRight className="w-5 h-5" />}
@@ -361,7 +363,7 @@ export function SessionSidebar() {
           ) : (
             <button
               onClick={handleToggleSidebar}
-              className="p-2 text-fg-secondary hover:text-fg-default hover:bg-gray-100 rounded-lg transition-colors group"
+              className="p-2 text-fg-secondary hover:text-fg-default hover:bg-surface-secondary rounded-lg transition-colors group"
               title="Open sidebar"
             >
               <Donut className="w-5 h-5 text-amber-600 group-hover:hidden" />
@@ -486,11 +488,11 @@ export function SessionSidebar() {
           >
             <button
               onClick={toggleUserDropdown}
-              className={`flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors ${
+              className={`flex items-center gap-2 p-2 rounded-lg hover:bg-surface-secondary transition-colors ${
                 shouldShowExpanded ? 'w-full text-left' : 'w-auto'
               }`}
             >
-              <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 bg-surface-secondary rounded-full flex items-center justify-center">
                 <User className="w-4 h-4 text-fg-secondary" />
               </div>
               {shouldShowExpanded && (
@@ -504,7 +506,7 @@ export function SessionSidebar() {
           {/* Dropdown menu */}
           {isUserDropdownOpen && (
             <div
-              className={`absolute bg-white rounded-2xl shadow-lg border border-border py-2 z-50 ${
+              className={`absolute bg-surface-primary rounded-2xl shadow-lg border border-border py-2 z-50 ${
                 shouldShowExpanded
                   ? 'bottom-full left-0 right-0 mb-2'
                   : 'bottom-full left-0 mb-2 w-48'

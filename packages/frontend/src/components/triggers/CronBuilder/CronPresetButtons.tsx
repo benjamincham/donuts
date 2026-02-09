@@ -56,7 +56,7 @@ export function CronPresetButtons({
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               isSelected
                 ? 'bg-action-primary text-white'
-                : 'bg-gray-100 text-fg-secondary hover:bg-gray-200'
+                : 'bg-surface-secondary text-fg-secondary hover:bg-border'
             } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             {t(preset.label)}
@@ -72,7 +72,7 @@ export function CronPresetButtons({
         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
           isCustom
             ? 'bg-action-primary text-white'
-            : 'bg-gray-100 text-fg-secondary hover:bg-gray-200'
+            : 'bg-surface-secondary text-fg-secondary hover:bg-border'
         } disabled:opacity-50 disabled:cursor-not-allowed`}
       >
         {t('triggers.cron.presetCustom')}

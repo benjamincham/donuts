@@ -58,7 +58,7 @@ export function TriggerBasicInfo({
             placeholder={t('triggers.form.namePlaceholder')}
             disabled={disabled}
             maxLength={100}
-            className="w-full px-3 py-2 bg-white border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-border-focus disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="w-full px-3 py-2 bg-surface-primary border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-border-focus disabled:bg-surface-secondary disabled:cursor-not-allowed"
           />
         </div>
 
@@ -71,7 +71,7 @@ export function TriggerBasicInfo({
             value={agentId}
             onChange={(e) => onAgentIdChange(e.target.value)}
             disabled={disabled}
-            className="w-full px-3 py-2 bg-white border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-border-focus disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="w-full px-3 py-2 bg-surface-primary border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-border-focus disabled:bg-surface-secondary disabled:cursor-not-allowed"
           >
             <option value="">{t('triggers.form.agentPlaceholder')}</option>
             {agents.map((agent) => (
@@ -97,7 +97,7 @@ export function TriggerBasicInfo({
             disabled={disabled}
             maxLength={500}
             rows={3}
-            className="w-full px-3 py-2 bg-white border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-border-focus resize-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="w-full px-3 py-2 bg-surface-primary border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-border-focus resize-none disabled:bg-surface-secondary disabled:cursor-not-allowed"
           />
         </div>
       </div>

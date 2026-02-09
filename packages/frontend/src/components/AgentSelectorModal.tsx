@@ -219,7 +219,7 @@ export const AgentSelectorModal: React.FC<AgentSelectorModalProps> = ({
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder={t('agent.searchPlaceholder')}
-                        className="w-full pl-10 pr-10 py-2.5 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-border-focus focus:border-transparent text-sm"
+                        className="w-full pl-10 pr-10 py-2.5 border border-border-strong rounded-lg bg-surface-primary text-fg-default focus:outline-none focus:ring-2 focus:ring-border-focus focus:border-transparent text-sm"
                       />
                       {searchQuery && (
                         <button
@@ -290,7 +290,7 @@ export const AgentSelectorModal: React.FC<AgentSelectorModalProps> = ({
                         return (
                           <div
                             key={agent.agentId}
-                            className={`relative bg-white rounded-2xl transition-all cursor-pointer border ${
+                            className={`relative bg-surface-primary rounded-2xl transition-all cursor-pointer border ${
                               isSelected
                                 ? 'border-blue-500 ring-2 ring-blue-100'
                                 : 'border-border hover:border-border-strong'
@@ -302,7 +302,7 @@ export const AgentSelectorModal: React.FC<AgentSelectorModalProps> = ({
                                 <div className="flex items-center space-x-3 flex-1">
                                   <div
                                     className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                                      isSelected ? 'bg-blue-100' : 'bg-gray-100'
+                                      isSelected ? 'bg-blue-100' : 'bg-surface-secondary'
                                     }`}
                                   >
                                     <AgentIcon
@@ -326,14 +326,14 @@ export const AgentSelectorModal: React.FC<AgentSelectorModalProps> = ({
                                 <div className="relative ml-2">
                                   <button
                                     onClick={(e) => toggleMenu(agent.agentId, e)}
-                                    className="p-1.5 text-fg-disabled hover:text-fg-secondary hover:bg-gray-100 rounded transition-colors"
+                                    className="p-1.5 text-fg-disabled hover:text-fg-secondary hover:bg-surface-secondary rounded transition-colors"
                                   >
                                     <MoreHorizontal className="w-5 h-5" />
                                   </button>
 
                                   {/* ドロップダウンメニュー */}
                                   {openMenuId === agent.agentId && (
-                                    <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-lg shadow-lg border border-border py-1 z-10">
+                                    <div className="absolute right-0 top-full mt-1 w-40 bg-surface-primary rounded-lg shadow-lg border border-border py-1 z-10">
                                       <button
                                         onMouseDown={(e) => {
                                           e.stopPropagation();

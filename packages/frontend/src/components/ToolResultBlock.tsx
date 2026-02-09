@@ -66,7 +66,7 @@ export const ToolResultBlock: React.FC<ToolResultBlockProps> = ({ toolResult }) 
   return (
     <div className="tool-result-block w-full">
       {/* 白背景・グレー枠線のメインコンテナ */}
-      <div className="bg-white border border-border-strong rounded-lg text-sm hover:shadow-sm transition-shadow">
+      <div className="bg-surface-primary border border-border-strong rounded-lg text-sm hover:shadow-sm transition-shadow">
         {/* ヘッダー部分（全体クリック可能） */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
@@ -108,7 +108,7 @@ export const ToolResultBlock: React.FC<ToolResultBlockProps> = ({ toolResult }) 
               </span>
               <button
                 onClick={() => navigator.clipboard.writeText(toolResult.content)}
-                className="text-fg-disabled hover:text-fg-secondary text-xs px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+                className="text-fg-disabled hover:text-fg-secondary text-xs px-2 py-1 rounded hover:bg-surface-secondary transition-colors"
                 title={t('common.copyToClipboard')}
               >
                 {t('common.copy')}

@@ -27,9 +27,9 @@ const variantStyles: Record<NonNullable<ButtonProps['variant']>, string> = {
   primary:
     'bg-action-primary text-action-primary-fg hover:bg-action-primary-hover focus:ring-action-primary/30',
   secondary:
-    'bg-surface-secondary text-fg-default border border-border hover:bg-gray-100 focus:ring-border-focus/20',
+    'bg-surface-secondary text-fg-default border border-border hover:bg-surface-secondary focus:ring-border-focus/20',
   ghost:
-    'bg-transparent text-fg-secondary hover:bg-gray-100 hover:text-fg-default focus:ring-border-focus/20',
+    'bg-transparent text-fg-secondary hover:bg-surface-secondary hover:text-fg-default focus:ring-border-focus/20',
   danger:
     'bg-action-danger text-action-danger-fg hover:bg-action-danger-hover focus:ring-action-danger/30',
   outline:

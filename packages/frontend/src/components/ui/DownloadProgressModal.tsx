@@ -58,7 +58,7 @@ export const DownloadProgressModal: React.FC<DownloadProgressModalProps> = ({
           {canClose && (
             <button
               onClick={onClose}
-              className="p-2 text-fg-disabled hover:text-fg-secondary hover:bg-gray-100 rounded-btn transition-colors"
+              className="p-2 text-fg-disabled hover:text-fg-secondary hover:bg-surface-secondary rounded-btn transition-colors"
               aria-label={t('common.close')}
             >
               <X className="w-5 h-5" />
@@ -77,7 +77,7 @@ export const DownloadProgressModal: React.FC<DownloadProgressModalProps> = ({
                 </span>
                 <span>{progress.percentage}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+              <div className="w-full bg-border rounded-full h-2.5 overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-300 ${
                     status === 'success' ? 'bg-action-success' : 'bg-action-primary'

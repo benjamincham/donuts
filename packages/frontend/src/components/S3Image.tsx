@@ -37,7 +37,7 @@ export const S3Image: React.FC<S3ImageProps> = ({ path, alt, className = '' }) =
   if (isLoading) {
     return (
       <div
-        className={`flex items-center justify-center bg-gray-100 rounded ${className}`}
+        className={`flex items-center justify-center bg-surface-secondary rounded ${className}`}
         style={{ minHeight: '200px' }}
       >
         <div className="text-center text-fg-muted">

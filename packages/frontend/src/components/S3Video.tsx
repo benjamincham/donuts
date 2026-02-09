@@ -36,7 +36,7 @@ export const S3Video: React.FC<S3VideoProps> = ({ path, className = '' }) => {
   if (isLoading) {
     return (
       <div
-        className={`flex items-center justify-center bg-gray-100 rounded-lg ${className}`}
+        className={`flex items-center justify-center bg-surface-secondary rounded-lg ${className}`}
         style={{ minHeight: '300px' }}
       >
         <div className="text-center text-fg-muted">

@@ -41,8 +41,8 @@ export const NavItem: React.FC<NavItemProps> = ({
       onClick={onClick}
       className={cn(
         'p-2 rounded-btn transition-colors flex items-center gap-2 no-underline',
-        'text-fg-secondary hover:bg-gray-100 hover:text-fg-default',
-        active && 'bg-gray-100 text-fg-default',
+        'text-fg-secondary hover:bg-surface-secondary hover:text-fg-default',
+        active && 'bg-surface-secondary text-fg-default',
         collapsed ? 'w-auto justify-center' : 'w-full text-left',
         className
       )}

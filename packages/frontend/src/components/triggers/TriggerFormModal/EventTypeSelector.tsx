@@ -142,7 +142,7 @@ export function EventTypeSelector({
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-semibold text-fg-default">{eventType.label}</p>
                   {!eventType.isAvailable && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-fg-secondary">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-border text-fg-secondary">
                       {t('triggers.eventTypes.comingSoonBadge')}
                     </span>
                   )}

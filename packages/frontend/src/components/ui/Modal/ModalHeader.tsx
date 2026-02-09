@@ -36,7 +36,7 @@ export const ModalCloseButton: React.FC<ModalCloseButtonProps> = ({ onClose, cla
     <button
       onClick={onClose || contextOnClose}
       className={cn(
-        'p-2 text-fg-disabled hover:text-fg-secondary rounded-btn hover:bg-gray-100 transition-colors',
+        'p-2 text-fg-disabled hover:text-fg-secondary rounded-btn hover:bg-surface-secondary transition-colors',
         className
       )}
     >

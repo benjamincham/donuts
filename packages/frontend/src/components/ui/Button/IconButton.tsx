@@ -22,8 +22,10 @@ export interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEl
 }
 
 const variantStyles: Record<NonNullable<IconButtonProps['variant']>, string> = {
-  ghost: 'text-fg-secondary hover:text-fg-default hover:bg-gray-100 focus:ring-border-focus/20',
-  subtle: 'text-fg-muted hover:text-fg-secondary hover:bg-gray-100 focus:ring-border-focus/20',
+  ghost:
+    'text-fg-secondary hover:text-fg-default hover:bg-surface-secondary focus:ring-border-focus/20',
+  subtle:
+    'text-fg-muted hover:text-fg-secondary hover:bg-surface-secondary focus:ring-border-focus/20',
   outline:
     'text-fg-secondary border border-border hover:bg-surface-secondary focus:ring-border-focus/20',
 };

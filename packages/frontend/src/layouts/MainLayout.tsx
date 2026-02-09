@@ -154,10 +154,10 @@ export function MainLayout() {
     <div className="flex h-full w-full relative">
       {/* モバイル時のハンバーガーメニュー */}
       {isMobileView && !isSidebarOpen && (
-        <header className="fixed top-0 left-0 right-0 z-30 bg-white border-b border-border px-3 py-2 flex items-center gap-2">
+        <header className="fixed top-0 left-0 right-0 z-30 bg-surface-primary border-b border-border px-3 py-2 flex items-center gap-2">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 text-fg-secondary hover:text-fg-default hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+            className="p-2 text-fg-secondary hover:text-fg-default hover:bg-surface-secondary rounded-lg transition-colors flex-shrink-0"
             aria-label="サイドバーを開く"
           >
             <Menu className="w-5 h-5" />
@@ -165,8 +165,8 @@ export function MainLayout() {
 
           {showSkeleton ? (
             <div className="flex items-center gap-2 flex-1 min-w-0 p-2">
-              <div className="w-5 h-5 bg-gray-200 rounded animate-pulse flex-shrink-0" />
-              <div className="h-5 bg-gray-200 rounded animate-pulse w-32" />
+              <div className="w-5 h-5 bg-border rounded animate-pulse flex-shrink-0" />
+              <div className="h-5 bg-border rounded animate-pulse w-32" />
             </div>
           ) : (
             pageTitle && (
@@ -189,7 +189,7 @@ export function MainLayout() {
             <Link
               to="/chat"
               onClick={handleNewChat}
-              className="p-2 text-fg-secondary hover:text-fg-default hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+              className="p-2 text-fg-secondary hover:text-fg-default hover:bg-surface-secondary rounded-lg transition-colors flex-shrink-0"
               aria-label={t('sidebar.newChat')}
               title={t('sidebar.newChat')}
             >
@@ -232,7 +232,7 @@ export function MainLayout() {
 
       {/* メインコンテンツエリア */}
       <div
-        className={`flex-1 flex flex-col min-w-0 bg-white ${isMobileView && !isSidebarOpen ? 'pt-12' : ''}`}
+        className={`flex-1 flex flex-col min-w-0 bg-surface-primary ${isMobileView && !isSidebarOpen ? 'pt-12' : ''}`}
       >
         <Outlet />
       </div>

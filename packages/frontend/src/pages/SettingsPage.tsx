@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Settings, Brain, HelpCircle, Languages, ChevronDown, Check } from 'lucide-react';
+import { Settings, Brain, HelpCircle, Languages, ChevronDown, Check, Palette } from 'lucide-react';
 import { useMemoryStore } from '../stores/memoryStore';
 import { useSettingsStore } from '../stores/settingsStore';
+import { useThemeStore } from '../stores/themeStore';
+import type { Theme } from '../stores/themeStore';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Button } from '../components/ui/Button';
 import { Toggle } from '../components/ui/Toggle';
@@ -16,14 +18,24 @@ export function SettingsPage() {
   const { t, i18n } = useTranslation();
   const { isMemoryEnabled, setMemoryEnabled } = useMemoryStore();
   const { sendBehavior, setSendBehavior } = useSettingsStore();
+  const { theme, setTheme } = useThemeStore();
   const [showMemoryModal, setShowMemoryModal] = useState(false);
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
+  const [isThemeDropdownOpen, setIsThemeDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const themeDropdownRef = useRef<HTMLDivElement>(null);
 
   // 言語選択オプション
   const languageOptions = [
     { value: 'ja', label: t('settings.languageJa') },
     { value: 'en', label: t('settings.languageEn') },
+  ];
+
+  // テーマ選択オプション
+  const themeOptions: { value: Theme; label: string }[] = [
+    { value: 'light', label: t('settings.themeLight') },
+    { value: 'dark', label: t('settings.themeDark') },
+    { value: 'system', label: t('settings.themeAuto') },
   ];
 
   const handleLanguageChange = (lang: string) => {
@@ -37,19 +49,22 @@ export function SettingsPage() {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsLanguageDropdownOpen(false);
       }
+      if (themeDropdownRef.current && !themeDropdownRef.current.contains(event.target as Node)) {
+        setIsThemeDropdownOpen(false);
+      }
     };
 
-    if (isLanguageDropdownOpen) {
+    if (isLanguageDropdownOpen || isThemeDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isLanguageDropdownOpen]);
+  }, [isLanguageDropdownOpen, isThemeDropdownOpen]);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-surface-primary">
       <PageHeader icon={Settings} title={t('settings.title')} />
 
       {/* メインコンテンツ */}
@@ -66,7 +81,7 @@ export function SettingsPage() {
             {/* トリガーボタン */}
             <button
               onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
-              className="w-full px-4 py-3 bg-white border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-border-focus focus:border-transparent text-fg-default font-medium cursor-pointer hover:border-border-strong transition-colors flex items-center justify-between"
+              className="w-full px-4 py-3 bg-surface-primary border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-border-focus focus:border-transparent text-fg-default font-medium cursor-pointer hover:border-border-strong transition-colors flex items-center justify-between"
             >
               <span>{languageOptions.find((opt) => opt.value === i18n.language)?.label}</span>
               <ChevronDown
@@ -78,7 +93,7 @@ export function SettingsPage() {
 
             {/* ドロップダウンメニュー */}
             {isLanguageDropdownOpen && (
-              <div className="absolute z-10 w-full mt-2 bg-white border border-border rounded-lg shadow-lg overflow-hidden animate-subtle-fade-in">
+              <div className="absolute z-10 w-full mt-2 bg-surface-primary border border-border rounded-lg shadow-lg overflow-hidden animate-subtle-fade-in">
                 {languageOptions.map((option) => (
                   <button
                     key={option.value}
@@ -97,6 +112,54 @@ export function SettingsPage() {
                     {i18n.language === option.value && (
                       <Check className="w-5 h-5 text-action-primary" />
                     )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* テーマ設定セクション */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Palette className="w-5 h-5 text-fg-secondary" />
+            <h2 className="text-lg font-semibold text-fg-default">{t('settings.theme')}</h2>
+          </div>
+
+          <div ref={themeDropdownRef} className="relative w-full">
+            <button
+              onClick={() => setIsThemeDropdownOpen(!isThemeDropdownOpen)}
+              className="w-full px-4 py-3 bg-surface-primary border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-border-focus focus:border-transparent text-fg-default font-medium cursor-pointer hover:border-border-strong transition-colors flex items-center justify-between"
+            >
+              <span>{themeOptions.find((opt) => opt.value === theme)?.label}</span>
+              <ChevronDown
+                className={`w-5 h-5 text-fg-muted transition-transform duration-200 ${
+                  isThemeDropdownOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            {isThemeDropdownOpen && (
+              <div className="absolute z-10 w-full mt-2 bg-surface-elevated border border-border rounded-lg shadow-elevation-3 overflow-hidden animate-subtle-fade-in">
+                {themeOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      setTheme(option.value);
+                      setIsThemeDropdownOpen(false);
+                    }}
+                    className={`
+                      w-full px-4 py-3 text-left flex items-center justify-between
+                      transition-colors duration-150
+                      ${
+                        theme === option.value
+                          ? 'bg-feedback-info-bg text-action-primary font-medium'
+                          : 'text-fg-default hover:bg-surface-secondary'
+                      }
+                    `}
+                  >
+                    <span>{option.label}</span>
+                    {theme === option.value && <Check className="w-5 h-5 text-action-primary" />}
                   </button>
                 ))}
               </div>
@@ -141,7 +204,9 @@ export function SettingsPage() {
           <div className="space-y-4">
             <p className="text-sm text-fg-secondary">
               {t('settings.enterBehaviorDescription')}
-              <kbd className="mx-1 px-2 py-1 bg-gray-100 rounded text-sm font-mono">Enter</kbd>
+              <kbd className="mx-1 px-2 py-1 bg-surface-secondary rounded text-sm font-mono">
+                Enter
+              </kbd>
               {t('settings.enterBehaviorSuffix')}
             </p>
 
@@ -170,8 +235,11 @@ export function SettingsPage() {
                 />
                 <span className="text-sm text-fg-default">
                   {t('settings.newlineOnEnter')}（
-                  <kbd className="mx-1 px-1.5 py-0.5 bg-gray-100 rounded text-xs font-mono">⌘</kbd>+
-                  <kbd className="mx-1 px-1.5 py-0.5 bg-gray-100 rounded text-xs font-mono">
+                  <kbd className="mx-1 px-1.5 py-0.5 bg-surface-secondary rounded text-xs font-mono">
+                    ⌘
+                  </kbd>
+                  +
+                  <kbd className="mx-1 px-1.5 py-0.5 bg-surface-secondary rounded text-xs font-mono">
                     Enter
                   </kbd>
                   {t('settings.sendSuffix')}）

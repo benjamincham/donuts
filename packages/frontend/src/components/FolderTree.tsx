@@ -55,7 +55,7 @@ function TreeNode({
   return (
     <div>
       <div
-        className={`flex items-center gap-1 px-2 py-1.5 rounded cursor-pointer hover:bg-gray-100 transition-colors ${
+        className={`flex items-center gap-1 px-2 py-1.5 rounded cursor-pointer hover:bg-surface-secondary transition-colors ${
           isSelected ? 'bg-feedback-info-bg text-action-primary' : 'text-fg-secondary'
         }`}
         style={{ paddingLeft: `${level * 12 + 8}px` }}
@@ -65,7 +65,7 @@ function TreeNode({
         {/* 展開/折りたたみアイコン */}
         <button
           onClick={handleToggle}
-          className={`p-0.5 hover:bg-gray-200 rounded transition-colors ${
+          className={`p-0.5 hover:bg-border rounded transition-colors ${
             !hasChildren ? 'invisible' : ''
           }`}
         >

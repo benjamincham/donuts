@@ -194,8 +194,8 @@ export function EventSourceSelector({
                 rounded-lg border transition-all
                 ${
                   isSelected
-                    ? 'border-feedback-info-border bg-white ring-1 ring-blue-100'
-                    : 'border-border hover:border-border-strong bg-white'
+                    ? 'border-feedback-info-border bg-surface-primary ring-1 ring-blue-100'
+                    : 'border-border hover:border-border-strong bg-surface-primary'
                 }
                 ${disabled ? 'opacity-50' : ''}
               `}
@@ -215,7 +215,7 @@ export function EventSourceSelector({
                   <div
                     className={`
                       flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center
-                      ${isSelected ? 'bg-action-primary' : 'bg-gray-100'}
+                      ${isSelected ? 'bg-action-primary' : 'bg-surface-secondary'}
                     `}
                   >
                     <Icon

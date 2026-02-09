@@ -82,7 +82,7 @@ class ErrorBoundaryInner extends Component<Props, State> {
 
               <button
                 onClick={() => (window.location.href = '/')}
-                className="flex-1 px-4 py-2 bg-surface-secondary text-fg-secondary rounded-btn hover:bg-gray-200 transition-colors"
+                className="flex-1 px-4 py-2 bg-surface-secondary text-fg-secondary rounded-btn hover:bg-border transition-colors"
               >
                 {t('error.boundary.backToHome')}
               </button>
@@ -93,7 +93,7 @@ class ErrorBoundaryInner extends Component<Props, State> {
                 <summary className="text-sm text-fg-secondary cursor-pointer hover:text-fg-default">
                   {t('error.boundary.developerInfo')}
                 </summary>
-                <pre className="mt-2 text-xs bg-gray-100 rounded p-3 overflow-auto max-h-64">
+                <pre className="mt-2 text-xs bg-surface-secondary rounded p-3 overflow-auto max-h-64">
                   {this.state.errorInfo.componentStack}
                 </pre>
               </details>

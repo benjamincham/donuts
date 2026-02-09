@@ -51,12 +51,12 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ sessionId, onCreat
     <div className="chat-container">
       {/* ヘッダー - デスクトップ時のみ表示 */}
       {!isMobileView && (
-        <header className="flex items-center justify-between p-4 bg-white">
+        <header className="flex items-center justify-between p-4 bg-surface-primary">
           <div className="flex items-center">
             {isAgentLoading ? (
               <div className="flex items-center space-x-3 p-2">
-                <div className="w-6 h-6 bg-gray-200 rounded animate-pulse" />
-                <div className="h-6 bg-gray-200 rounded animate-pulse w-32" />
+                <div className="w-6 h-6 bg-border rounded animate-pulse" />
+                <div className="h-6 bg-border rounded animate-pulse w-32" />
               </div>
             ) : (
               <button

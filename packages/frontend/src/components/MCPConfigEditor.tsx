@@ -219,7 +219,7 @@ export const MCPConfigEditor: React.FC<MCPConfigEditorProps> = ({
           disabled={disabled}
           placeholder={`{\n  "mcpServers": {\n    "github": {\n      "command": "uvx",\n      "args": ["mcp-server-github"],\n      "env": {\n        "GITHUB_TOKEN": "your_token"\n      }\n    }\n  }\n}`}
           rows={12}
-          className="w-full px-3 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-border-focus focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed resize-none font-mono text-sm"
+          className="w-full px-3 py-2 border border-border-strong rounded-lg bg-surface-primary text-fg-default focus:ring-2 focus:ring-border-focus focus:border-transparent disabled:bg-surface-secondary disabled:cursor-not-allowed resize-none font-mono text-sm"
         />
       </div>
 
@@ -231,7 +231,7 @@ export const MCPConfigEditor: React.FC<MCPConfigEditorProps> = ({
             type="button"
             onClick={() => setShowSampleDropdown(!showSampleDropdown)}
             disabled={disabled}
-            className="inline-flex items-center space-x-2 px-3 py-2 text-sm text-fg-secondary bg-white border border-border-strong rounded-lg hover:bg-surface-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center space-x-2 px-3 py-2 text-sm text-fg-secondary bg-surface-primary border border-border-strong rounded-lg hover:bg-surface-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <span>{t('tool.mcp.insertSample')}</span>
             <ChevronDown className="w-4 h-4" />
@@ -240,7 +240,7 @@ export const MCPConfigEditor: React.FC<MCPConfigEditorProps> = ({
           {showSampleDropdown && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowSampleDropdown(false)} />
-              <div className="absolute left-0 top-full mt-1 w-56 bg-white rounded-lg shadow-lg border border-border py-1 z-20">
+              <div className="absolute left-0 top-full mt-1 w-56 bg-surface-primary rounded-lg shadow-lg border border-border py-1 z-20">
                 {Object.entries(SAMPLE_CONFIGS(t)).map(([key, sample]) => (
                   <button
                     key={key}

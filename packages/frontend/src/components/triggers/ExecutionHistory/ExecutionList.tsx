@@ -109,7 +109,7 @@ export function ExecutionList({ executions, isLoading, hasMore, onLoadMore }: Ex
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-surface-primary divide-y divide-gray-200">
             {executions.map((execution) => {
               const statusDisplay = getStatusDisplay(execution.status);
               const duration =

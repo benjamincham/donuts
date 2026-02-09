@@ -103,7 +103,7 @@ export const SharedAgentDetailModal: React.FC<SharedAgentDetailModalProps> = ({
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-xl max-w-5xl w-full mx-4 max-h-[90vh] flex flex-col">
+      <div className="relative bg-surface-primary rounded-2xl shadow-xl max-w-5xl w-full mx-4 max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div className="flex items-center gap-3">
@@ -119,7 +119,7 @@ export const SharedAgentDetailModal: React.FC<SharedAgentDetailModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-fg-disabled hover:text-fg-secondary rounded-btn hover:bg-gray-100 transition-colors"
+            className="p-2 text-fg-disabled hover:text-fg-secondary rounded-btn hover:bg-surface-secondary transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -165,7 +165,7 @@ export const SharedAgentDetailModal: React.FC<SharedAgentDetailModalProps> = ({
                   {agent.scenarios.map((scenario) => (
                     <div
                       key={scenario.id}
-                      className="bg-surface-secondary rounded-card p-3 hover:bg-gray-100 transition-colors"
+                      className="bg-surface-secondary rounded-card p-3 hover:bg-surface-secondary transition-colors"
                     >
                       <h4 className="text-sm font-medium text-fg-default mb-1">
                         {translateIfKey(scenario.title, t)}

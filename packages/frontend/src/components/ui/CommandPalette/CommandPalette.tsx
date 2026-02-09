@@ -95,7 +95,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
       {/* Command Dialog */}
       <div className="fixed left-1/2 top-[20%] -translate-x-1/2 w-full max-w-4xl px-4">
         <Command
-          className="bg-white rounded-2xl shadow-2xl border border-border overflow-hidden"
+          className="bg-surface-primary rounded-2xl shadow-2xl border border-border overflow-hidden"
           loop
         >
           {/* Search Input */}
@@ -106,7 +106,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
               className="w-full px-3 py-3 text-base outline-none placeholder:text-fg-disabled"
               autoFocus
             />
-            <kbd className="hidden sm:flex items-center gap-1 px-2 py-1 text-xs font-medium text-fg-disabled bg-gray-100 rounded">
+            <kbd className="hidden sm:flex items-center gap-1 px-2 py-1 text-xs font-medium text-fg-disabled bg-surface-secondary rounded">
               ESC
             </kbd>
           </div>
@@ -136,7 +136,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
                       key={agent.agentId}
                       value={`agent-${agent.name}-${translateIfKey(agent.description, t)}`}
                       onSelect={() => handleAgentSelect(agent)}
-                      className="flex items-center gap-4 px-3 py-2.5 rounded-xl cursor-pointer text-fg-secondary data-[selected=true]:bg-gray-100 data-[selected=true]:text-fg-default transition-colors"
+                      className="flex items-center gap-4 px-3 py-2.5 rounded-xl cursor-pointer text-fg-secondary data-[selected=true]:bg-surface-secondary data-[selected=true]:text-fg-default transition-colors"
                     >
                       <AgentIcon className="w-4 h-4 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
@@ -169,7 +169,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
                     key={session.sessionId}
                     value={`session-${session.title}-${session.sessionId}`}
                     onSelect={() => handleSessionSelect(session.sessionId)}
-                    className="flex items-center gap-4 px-3 py-2.5 rounded-xl cursor-pointer text-fg-secondary data-[selected=true]:bg-gray-100 data-[selected=true]:text-fg-default transition-colors"
+                    className="flex items-center gap-4 px-3 py-2.5 rounded-xl cursor-pointer text-fg-secondary data-[selected=true]:bg-surface-secondary data-[selected=true]:text-fg-default transition-colors"
                   >
                     <MessageSquare className="w-4 h-4 flex-shrink-0 text-fg-disabled" />
                     <span className="font-medium truncate">{session.title}</span>
@@ -183,16 +183,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
           <div className="flex items-center justify-between border-t border-border px-4 py-2 text-xs text-fg-disabled">
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-fg-muted">↑↓</kbd>
+                <kbd className="px-1.5 py-0.5 bg-surface-secondary rounded text-fg-muted">↑↓</kbd>
                 {t('commandPalette.toNavigate', 'to navigate')}
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-fg-muted">↵</kbd>
+                <kbd className="px-1.5 py-0.5 bg-surface-secondary rounded text-fg-muted">↵</kbd>
                 {t('commandPalette.toSelect', 'to select')}
               </span>
             </div>
             <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-fg-muted">⌘K</kbd>
+              <kbd className="px-1.5 py-0.5 bg-surface-secondary rounded text-fg-muted">⌘K</kbd>
               {t('commandPalette.toToggle', 'to toggle')}
             </span>
           </div>

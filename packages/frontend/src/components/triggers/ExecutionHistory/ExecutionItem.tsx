@@ -109,7 +109,7 @@ export function ExecutionItem({ execution }: ExecutionItemProps) {
 
       {/* Details (expandable) */}
       {isExpanded && (
-        <div className="px-4 pb-4 space-y-3 border-t bg-white">
+        <div className="px-4 pb-4 space-y-3 border-t bg-surface-primary">
           {/* Input */}
           {execution.input && (
             <div>

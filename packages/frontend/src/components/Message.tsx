@@ -128,7 +128,10 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
 
         // Inline code
         return (
-          <code className="bg-gray-100 text-fg-default px-1 py-0.5 rounded text-sm" {...props}>
+          <code
+            className="bg-surface-secondary text-fg-default px-1 py-0.5 rounded text-sm"
+            {...props}
+          >
             {children}
           </code>
         );

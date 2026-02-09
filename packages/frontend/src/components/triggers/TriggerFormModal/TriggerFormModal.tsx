@@ -364,7 +364,7 @@ export function TriggerFormModal({ isOpen, onClose, trigger, onSave }: TriggerFo
             type="button"
             onClick={handleCancel}
             disabled={isSaving}
-            className="px-5 py-2.5 text-sm font-medium text-fg-secondary bg-gray-100 rounded-xl hover:bg-gray-200 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 shadow-sm"
+            className="px-5 py-2.5 text-sm font-medium text-fg-secondary bg-surface-secondary rounded-xl hover:bg-border active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 shadow-sm"
           >
             {t('triggers.form.cancel')}
           </button>

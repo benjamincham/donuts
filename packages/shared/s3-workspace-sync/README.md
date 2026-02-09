@@ -2,6 +2,109 @@
 
 Bidirectional file sync between **Amazon S3** and a **local workspace directory** with MD5-hash-based diff detection, `.syncignore` support, and configurable concurrent transfers.
 
+## Why — The Ephemeral Filesystem Problem
+
+AI Agents that perform file operations — code generation, data analysis, report creation — need a **workspace directory** where they can read and write files. However, modern cloud-native environments are inherently **ephemeral**:
+
+| Environment | Filesystem Behavior |
+|---|---|
+| **AWS Lambda** | `/tmp` is wiped between cold starts. Max 512 MB (10 GB with ephemeral storage). |
+| **AWS Fargate / ECS** | Container filesystem is destroyed when the task stops or scales down. |
+| **Kubernetes Pods** | Pod-local storage is lost on eviction, restart, or rescheduling. |
+| **Serverless Containers** (Cloud Run, etc.) | Same — no persistent local state across invocations. |
+
+This means that every file an agent creates or modifies during a session **will be lost** when the execution environment is recycled. For AI agents that build up project context over multiple interactions (e.g., iteratively refining code, accumulating research data), this is a critical problem.
+
+### The Solution: S3 as a Persistent Workspace
+
+This package treats **Amazon S3 as the durable source of truth** and the local filesystem as a transient cache:
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  Amazon S3 (Persistent)                                  │
+│  s3://bucket/users/user123/workspace/                    │
+│    ├── src/index.ts                                      │
+│    ├── data/report.csv                                   │
+│    └── README.md                                         │
+└────────────────────┬─────────────────────────────────────┘
+                     │
+              pull() │ ▼          push() │ ▲
+                     │                   │
+┌────────────────────▼───────────────────┴─────────────────┐
+│  Local Workspace (Ephemeral)                             │
+│  /tmp/ws/                                                │
+│    ├── src/index.ts        ← restored on each request    │
+│    ├── data/report.csv     ← agent reads/writes here     │
+│    └── README.md           ← changes synced back to S3   │
+└──────────────────────────────────────────────────────────┘
+```
+
+On every agent invocation:
+1. **`pull()`** restores the workspace from S3 (only downloading changed files via MD5 hash comparison)
+2. The agent performs file operations on the local filesystem at full speed
+3. **`push()`** persists only the changed files back to S3
+
+This gives agents the **speed of local disk I/O** with the **durability of S3**, while keeping the execution environment fully stateless and horizontally scalable.
+
+## How It Works
+
+### Agent Request Lifecycle
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Agent as AI Agent<br/>(Lambda / Fargate)
+    participant Local as Local Filesystem<br/>(/tmp/ws)
+    participant S3 as Amazon S3<br/>(Persistent Storage)
+
+    Client->>Agent: User request
+
+    Note over Agent,S3: ① Restore workspace
+    Agent->>S3: pull() — ListObjectsV2
+    S3-->>Agent: File list + metadata
+    Agent->>S3: GetObject (parallel, up to 50)
+    S3-->>Local: Download files
+
+    Note over Agent,Local: ② Agent performs work
+    Agent->>Local: Read/write files<br/>(code generation, data analysis, etc.)
+
+    Note over Agent,S3: ③ Persist changes
+    Agent->>Local: Scan files + compute MD5 hashes
+    Local-->>Agent: Changed files detected
+    Agent->>S3: push() — PutObject (only diffs)
+
+    Agent-->>Client: Response
+```
+
+### Non-Blocking Background Pull
+
+In latency-sensitive scenarios, `startBackgroundPull()` allows the agent to begin setup tasks (model loading, prompt construction) while the workspace is being restored in parallel:
+
+```mermaid
+sequenceDiagram
+    participant Agent as AI Agent
+    participant Sync as S3WorkspaceSync
+    participant S3 as Amazon S3
+    participant Local as Local Filesystem
+
+    Agent->>Sync: startBackgroundPull()
+    activate Sync
+    Sync->>S3: ListObjectsV2 + GetObject (async)
+
+    Note over Agent: Agent continues setup<br/>(model init, prompt building)
+
+    Agent->>Sync: waitForPull()
+    Note over Sync: Blocks only if pull<br/>is still in progress
+
+    S3-->>Local: Files downloaded
+    deactivate Sync
+    Sync-->>Agent: Pull complete
+
+    Note over Agent,Local: Agent can now<br/>access all files
+```
+
+This pattern reduces perceived latency — in production, a 2,116-file workspace restores in ~10 seconds at 50 concurrency, but the agent can begin processing almost immediately.
+
 ## Features
 
 - **`pull()`** — Download from S3 to local (S3 as source of truth). Deletes local-only files.

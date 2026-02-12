@@ -176,7 +176,7 @@ export class AgentCoreLambdaTarget extends Construct {
   }
 
   /**
-   * Add this Lambda Target to Gateway
+   * Add this Lambda Target to Gateway (L2 Construct - same stack)
    */
   public addToGateway(gateway: agentcore.Gateway, targetId: string): agentcore.GatewayTarget {
     const target = gateway.addLambdaTarget(targetId, {
@@ -191,5 +191,27 @@ export class AgentCoreLambdaTarget extends Construct {
     target.node.addDependency(gateway.role);
 
     return target;
+  }
+
+  /**
+   * Add this Lambda Target to an imported Gateway (cross-stack)
+   *
+   * Uses GatewayTarget.forLambda() with an IGateway obtained from
+   * Gateway.fromGatewayAttributes(), enabling cross-stack deployment.
+   *
+   * @param importedGateway - IGateway instance from Gateway.fromGatewayAttributes()
+   * @param targetId - CloudFormation logical ID for the target resource
+   */
+  public addToImportedGateway(
+    importedGateway: agentcore.IGateway,
+    targetId: string
+  ): agentcore.GatewayTarget {
+    return agentcore.GatewayTarget.forLambda(this, targetId, {
+      gateway: importedGateway,
+      gatewayTargetName: this.targetName,
+      lambdaFunction: this.lambdaFunction,
+      toolSchema: this.toolSchema,
+      description: `Lambda target for ${this.targetName}`,
+    });
   }
 }

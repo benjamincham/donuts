@@ -5,56 +5,6 @@ import { Construct } from 'constructs';
 import { AgentCoreLambdaTarget } from './constructs/agentcore';
 import { EnvironmentConfig } from '../config';
 
-/**
- * Target definition for Lambda-based Gateway targets
- */
-export interface LambdaTargetDefinition {
-  /**
-   * Target name
-   */
-  readonly targetName: string;
-
-  /**
-   * Target description (optional)
-   */
-  readonly description?: string;
-
-  /**
-   * Lambda function source code directory
-   * Relative path (from project root)
-   */
-  readonly lambdaCodePath: string;
-
-  /**
-   * Tool Schema file path
-   * Relative path (from project root)
-   */
-  readonly toolSchemaPath: string;
-
-  /**
-   * Lambda timeout duration in seconds (optional)
-   * @default 30
-   */
-  readonly timeout?: number;
-
-  /**
-   * Lambda memory size in MB (optional)
-   * @default 256
-   */
-  readonly memorySize?: number;
-
-  /**
-   * Environment variables (optional)
-   */
-  readonly environment?: { [key: string]: string };
-
-  /**
-   * Whether to grant Retrieve permission to Knowledge Base (optional)
-   * @default false
-   */
-  readonly enableKnowledgeBaseAccess?: boolean;
-}
-
 export interface AgentCoreGatewayTargetStackProps extends cdk.StackProps {
   /**
    * Environment configuration
@@ -104,28 +54,9 @@ export interface AgentCoreGatewayTargetStackProps extends cdk.StackProps {
  */
 export class AgentCoreGatewayTargetStack extends cdk.Stack {
   /**
-   * Built-in target definitions managed within this stack.
-   * Add new targets here to deploy them as part of this stack.
+   * Utility Tools Lambda Target
    */
-  private static readonly BUILT_IN_TARGETS: LambdaTargetDefinition[] = [
-    {
-      targetName: 'utility-tools',
-      description: 'Lambda function providing utility tools',
-      lambdaCodePath: 'packages/lambda-tools/tools/utility-tools',
-      toolSchemaPath: 'packages/lambda-tools/tools/utility-tools/tool-schema.json',
-      timeout: 30,
-      memorySize: 256,
-      enableKnowledgeBaseAccess: true,
-      environment: {
-        LOG_LEVEL: 'INFO',
-      },
-    },
-  ];
-
-  /**
-   * Created Lambda targets
-   */
-  public readonly lambdaTargets: AgentCoreLambdaTarget[] = [];
+  public readonly utilityToolsTarget: AgentCoreLambdaTarget;
 
   constructor(scope: Construct, id: string, props: AgentCoreGatewayTargetStackProps) {
     super(scope, id, props);
@@ -148,47 +79,38 @@ export class AgentCoreGatewayTargetStack extends cdk.Stack {
       role: iam.Role.fromRoleArn(this, 'ImportedGatewayRole', gatewayRoleArn),
     });
 
-    // Create Lambda targets from built-in definitions
-    const targets = AgentCoreGatewayTargetStack.BUILT_IN_TARGETS;
-    for (const targetDef of targets) {
-      const target = new AgentCoreLambdaTarget(this, `Target-${targetDef.targetName}`, {
-        resourcePrefix,
-        targetName: targetDef.targetName,
-        description: targetDef.description,
-        lambdaCodePath: targetDef.lambdaCodePath,
-        toolSchemaPath: targetDef.toolSchemaPath,
-        timeout: targetDef.timeout,
-        memorySize: targetDef.memorySize,
-        environment: targetDef.environment,
-        enableKnowledgeBaseAccess: targetDef.enableKnowledgeBaseAccess,
-      });
+    this.utilityToolsTarget = new AgentCoreLambdaTarget(this, 'UtilityToolsTarget', {
+      resourcePrefix,
+      targetName: 'utility-tools',
+      description: 'Lambda function providing utility tools',
+      lambdaCodePath: 'packages/lambda-tools/tools/utility-tools',
+      toolSchemaPath: 'packages/lambda-tools/tools/utility-tools/tool-schema.json',
+      timeout: 30,
+      memorySize: 256,
+      environment: { LOG_LEVEL: 'INFO' },
+    });
+    this.utilityToolsTarget.addToImportedGateway(importedGateway, 'UtilityToolsGatewayTarget');
+    this.utilityToolsTarget.lambdaFunction.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['bedrock:Retrieve'],
+        resources: [`arn:aws:bedrock:${this.region}:${this.account}:knowledge-base/*`],
+      })
+    );
 
-      // Add target to the imported Gateway
-      target.addToImportedGateway(importedGateway, `GatewayTarget-${targetDef.targetName}`);
-
-      this.lambdaTargets.push(target);
-
-      // CloudFormation outputs per target
-      new cdk.CfnOutput(this, `${targetDef.targetName}-LambdaArn`, {
-        value: target.lambdaFunction.functionArn,
-        description: `${targetDef.targetName} Lambda Function ARN`,
-      });
-
-      new cdk.CfnOutput(this, `${targetDef.targetName}-LambdaName`, {
-        value: target.lambdaFunction.functionName,
-        description: `${targetDef.targetName} Lambda Function Name`,
-      });
-    }
-
-    // Stack-level outputs
+    // CloudFormation outputs
     new cdk.CfnOutput(this, 'GatewayArn', {
       value: gatewayArn,
       description: 'Connected AgentCore Gateway ARN',
     });
 
-    new cdk.CfnOutput(this, 'TargetCount', {
-      value: String(targets.length),
-      description: 'Number of deployed Gateway targets',
+    new cdk.CfnOutput(this, 'UtilityToolsLambdaArn', {
+      value: this.utilityToolsTarget.lambdaFunction.functionArn,
+      description: 'Utility Tools Lambda Function ARN',
+    });
+
+    new cdk.CfnOutput(this, 'UtilityToolsLambdaName', {
+      value: this.utilityToolsTarget.lambdaFunction.functionName,
+      description: 'Utility Tools Lambda Function Name',
     });
 
     // Tags

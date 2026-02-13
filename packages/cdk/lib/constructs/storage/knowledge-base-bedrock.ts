@@ -30,12 +30,6 @@ export interface KnowledgeBaseBedrockProps {
   readonly vectorBucketName: string;
 
   /**
-   * Vector index name
-   * @default 'bedrock-kb-index'
-   */
-  readonly vectorIndexName?: string;
-
-  /**
    * Embedding model ARN
    * @default Amazon Titan Embeddings G1 - Text
    */
@@ -96,7 +90,7 @@ export class KnowledgeBaseBedrock extends Construct {
     });
 
     // Add policy for S3 Vectors access
-    const vectorIndexName = props.vectorIndexName || 'bedrock-kb-index';
+    // Allow access to all KB-specific indices (dynamically created by backend)
     this.knowledgeBaseRole.addToPolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
@@ -108,7 +102,7 @@ export class KnowledgeBaseBedrock extends Construct {
           's3vectors:GetIndex',
         ],
         resources: [
-          `arn:aws:s3vectors:${stack.region}:${stack.account}:bucket/${props.vectorBucketName}/index/${vectorIndexName}`,
+          `arn:aws:s3vectors:${stack.region}:${stack.account}:bucket/${props.vectorBucketName}/index/*`,
         ],
       })
     );
@@ -158,8 +152,8 @@ export class KnowledgeBaseBedrock extends Construct {
       storageConfiguration: {
         type: 'S3_VECTORS',
         s3VectorsConfiguration: {
-          indexArn: `arn:aws:s3vectors:${stack.region}:${stack.account}:bucket/${props.vectorBucketName}/index/${vectorIndexName}`,
-          indexName: vectorIndexName,
+          indexArn: `arn:aws:s3vectors:${stack.region}:${stack.account}:bucket/${props.vectorBucketName}/index/template-kb-index`,
+          indexName: 'template-kb-index',
           vectorBucketArn: `arn:aws:s3:::${props.vectorBucketName}`,
         },
       },

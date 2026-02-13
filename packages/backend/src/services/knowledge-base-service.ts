@@ -185,7 +185,8 @@ export class KnowledgeBaseService {
         throw new Error('S3_VECTOR_BUCKET_NAME environment variable is not set');
       }
 
-      const vectorIndexName = 'bedrock-kb-index';
+      // Each KB gets its own vector index for data isolation
+      const vectorIndexName = `kb-${knowledgeBaseId}-index`;
       const accountId = process.env.AWS_ACCOUNT_ID || '*';
 
       // Create Bedrock Knowledge Base with S3 Vectors storage

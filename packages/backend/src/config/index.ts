@@ -54,8 +54,8 @@ const envSchema = z.object({
   // Knowledge Base Role ARN (for Bedrock KB creation)
   KNOWLEDGE_BASE_ROLE_ARN: z.string().optional(),
 
-  // OpenSearch Collection ARN (for Bedrock KB vector store)
-  OPENSEARCH_COLLECTION_ARN: z.string().optional(),
+  // S3 Vector Bucket Name (for Bedrock KB vector store using S3 Vectors)
+  S3_VECTOR_BUCKET_NAME: z.string().optional(),
 });
 
 /**
@@ -123,8 +123,8 @@ export const config = {
   // Knowledge Base Role ARN (for Bedrock KB creation)
   knowledgeBaseRoleArn: env.KNOWLEDGE_BASE_ROLE_ARN,
 
-  // OpenSearch Collection ARN (for Bedrock KB vector store)
-  opensearchCollectionArn: env.OPENSEARCH_COLLECTION_ARN,
+  // S3 Vector Bucket Name (for Bedrock KB vector store using S3 Vectors)
+  s3VectorBucketName: env.S3_VECTOR_BUCKET_NAME,
 } as const;
 
 console.log('⚙️  Backend API configuration loaded:', {

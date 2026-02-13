@@ -25,33 +25,15 @@ export interface KnowledgeBaseBedrockProps {
   readonly dataSourceBucketArn: string;
 
   /**
-   * OpenSearch collection ARN
+   * S3 bucket name for vector storage (S3 Vectors)
    */
-  readonly opensearchCollectionArn: string;
+  readonly vectorBucketName: string;
 
   /**
-   * OpenSearch index name
-   * @default 'bedrock-knowledge-base-index'
+   * Vector index name
+   * @default 'bedrock-kb-index'
    */
-  readonly opensearchIndexName?: string;
-
-  /**
-   * Vector field name in OpenSearch
-   * @default 'bedrock-knowledge-base-default-vector'
-   */
-  readonly vectorFieldName?: string;
-
-  /**
-   * Text field name in OpenSearch
-   * @default 'AMAZON_BEDROCK_TEXT_CHUNK'
-   */
-  readonly textFieldName?: string;
-
-  /**
-   * Metadata field name in OpenSearch
-   * @default 'AMAZON_BEDROCK_METADATA'
-   */
-  readonly metadataFieldName?: string;
+  readonly vectorIndexName?: string;
 
   /**
    * Embedding model ARN
@@ -62,7 +44,7 @@ export interface KnowledgeBaseBedrockProps {
 
 /**
  * Bedrock Knowledge Base Construct
- * Provides Bedrock Knowledge Base with OpenSearch vector store
+ * Provides Bedrock Knowledge Base with S3 Vectors storage
  */
 export class KnowledgeBaseBedrock extends Construct {
   /**
@@ -113,14 +95,21 @@ export class KnowledgeBaseBedrock extends Construct {
       description: 'IAM role for Bedrock Knowledge Base',
     });
 
-    // Add policy for OpenSearch access
+    // Add policy for S3 Vectors access
+    const vectorIndexName = props.vectorIndexName || 'bedrock-kb-index';
     this.knowledgeBaseRole.addToPolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: [
-          'aoss:APIAccessAll',
+          's3vectors:PutVectors',
+          's3vectors:GetVectors',
+          's3vectors:DeleteVectors',
+          's3vectors:QueryVectors',
+          's3vectors:GetIndex',
         ],
-        resources: [props.opensearchCollectionArn],
+        resources: [
+          `arn:aws:s3vectors:${stack.region}:${stack.account}:bucket/${props.vectorBucketName}/index/${vectorIndexName}`,
+        ],
       })
     );
 
@@ -167,15 +156,11 @@ export class KnowledgeBaseBedrock extends Construct {
         },
       },
       storageConfiguration: {
-        type: 'OPENSEARCH_SERVERLESS',
-        opensearchServerlessConfiguration: {
-          collectionArn: props.opensearchCollectionArn,
-          vectorIndexName: props.opensearchIndexName || 'bedrock-knowledge-base-index',
-          fieldMapping: {
-            vectorField: props.vectorFieldName || 'bedrock-knowledge-base-default-vector',
-            textField: props.textFieldName || 'AMAZON_BEDROCK_TEXT_CHUNK',
-            metadataField: props.metadataFieldName || 'AMAZON_BEDROCK_METADATA',
-          },
+        type: 'S3_VECTORS',
+        s3VectorsConfiguration: {
+          indexArn: `arn:aws:s3vectors:${stack.region}:${stack.account}:bucket/${props.vectorBucketName}/index/${vectorIndexName}`,
+          indexName: vectorIndexName,
+          vectorBucketArn: `arn:aws:s3:::${props.vectorBucketName}`,
         },
       },
     });

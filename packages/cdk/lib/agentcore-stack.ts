@@ -8,7 +8,6 @@ import {
   UserStorage,
   KnowledgeBaseTable,
   KnowledgeBaseStorage,
-  KnowledgeBaseOpenSearch,
   KnowledgeBaseBedrock,
 } from './constructs/storage';
 import { TriggerLambda, TriggerEventSources, SessionStreamHandler } from './constructs/triggers';
@@ -148,10 +147,7 @@ export class AgentCoreStack extends cdk.Stack {
    */
   public readonly knowledgeBaseStorage: KnowledgeBaseStorage;
 
-  /**
-   * Created Knowledge Base OpenSearch Collection
-   */
-  public readonly knowledgeBaseOpenSearch: KnowledgeBaseOpenSearch;
+  // Note: OpenSearch removed - using S3 Vectors for vector storage instead
 
   /**
    * Created Bedrock Knowledge Base
@@ -318,18 +314,12 @@ export class AgentCoreStack extends cdk.Stack {
       autoDeleteObjects: envConfig.s3AutoDeleteObjects,
     });
 
-    // 5.11. Create Knowledge Base OpenSearch Collection (vector search)
-    this.knowledgeBaseOpenSearch = new KnowledgeBaseOpenSearch(this, 'KnowledgeBaseOpenSearch', {
-      collectionNamePrefix: resourcePrefix,
-      description: 'OpenSearch Serverless collection for Bedrock Knowledge Base vector search',
-    });
-
-    // 5.12. Create Bedrock Knowledge Base
+    // 5.11. Create Bedrock Knowledge Base with S3 Vectors
     this.knowledgeBaseBedrock = new KnowledgeBaseBedrock(this, 'KnowledgeBaseBedrock', {
       knowledgeBaseNamePrefix: resourcePrefix,
       description: 'Bedrock Knowledge Base for RAG capabilities',
       dataSourceBucketArn: this.knowledgeBaseStorage.bucketArn,
-      opensearchCollectionArn: this.knowledgeBaseOpenSearch.collectionArn,
+      vectorBucketName: this.knowledgeBaseStorage.bucketName,
     });
 
     // 6. Create Backend API (Lambda Web Adapter) - Create before Runtime to pass URL
@@ -372,7 +362,6 @@ export class AgentCoreStack extends cdk.Stack {
       knowledgeBaseTableName: this.knowledgeBaseTable.tableName,
       knowledgeBaseStorageBucketName: this.knowledgeBaseStorage.bucketName,
       knowledgeBaseRoleArn: this.knowledgeBaseBedrock.knowledgeBaseRole.roleArn,
-      opensearchCollectionArn: this.knowledgeBaseOpenSearch.collectionArn,
       logRetention: envConfig.logRetentionDays,
     });
 
@@ -418,13 +407,7 @@ export class AgentCoreStack extends cdk.Stack {
       })
     );
 
-    // Grant OpenSearch Serverless access to Backend API
-    this.backendApi.lambdaFunction.addToRolePolicy(
-      new cdk.aws_iam.PolicyStatement({
-        actions: ['aoss:APIAccessAll'],
-        resources: [this.knowledgeBaseOpenSearch.collectionArn],
-      })
-    );
+    // Note: S3 Vectors uses different permissions (handled by Knowledge Base role)
 
     // Grant EventBridge Scheduler permissions to Backend API
     this.backendApi.lambdaFunction.addToRolePolicy(
@@ -745,29 +728,7 @@ export class AgentCoreStack extends cdk.Stack {
       description: 'Knowledge Base Storage configuration summary',
     });
 
-    // Knowledge Base OpenSearch-related outputs
-    new cdk.CfnOutput(this, 'KnowledgeBaseOpenSearchCollectionName', {
-      value: this.knowledgeBaseOpenSearch.collectionName,
-      description: 'Knowledge Base OpenSearch Collection Name',
-      exportName: `${id}-KnowledgeBaseOpenSearchCollectionName`,
-    });
-
-    new cdk.CfnOutput(this, 'KnowledgeBaseOpenSearchCollectionArn', {
-      value: this.knowledgeBaseOpenSearch.collectionArn,
-      description: 'Knowledge Base OpenSearch Collection ARN',
-      exportName: `${id}-KnowledgeBaseOpenSearchCollectionArn`,
-    });
-
-    new cdk.CfnOutput(this, 'KnowledgeBaseOpenSearchCollectionEndpoint', {
-      value: this.knowledgeBaseOpenSearch.collectionEndpoint,
-      description: 'Knowledge Base OpenSearch Collection Endpoint',
-      exportName: `${id}-KnowledgeBaseOpenSearchCollectionEndpoint`,
-    });
-
-    new cdk.CfnOutput(this, 'KnowledgeBaseOpenSearchConfiguration', {
-      value: `Knowledge Base OpenSearch: ${this.knowledgeBaseOpenSearch.collectionName} - Vector search for RAG`,
-      description: 'Knowledge Base OpenSearch configuration summary',
-    });
+    // Note: OpenSearch removed - using S3 Vectors for vector storage
 
     // Bedrock Knowledge Base-related outputs
     new cdk.CfnOutput(this, 'KnowledgeBaseId', {
@@ -811,7 +772,7 @@ export class AgentCoreStack extends cdk.Stack {
     cdk.Tags.of(this).add('TriggerLambda', 'Enabled');
     cdk.Tags.of(this).add('KnowledgeBaseTable', 'Enabled');
     cdk.Tags.of(this).add('KnowledgeBaseStorage', 'Enabled');
-    cdk.Tags.of(this).add('KnowledgeBaseOpenSearch', 'Enabled');
+    // Note: OpenSearch removed - using S3 Vectors for vector storage
     cdk.Tags.of(this).add('KnowledgeBaseBedrock', 'Enabled');
   }
 }

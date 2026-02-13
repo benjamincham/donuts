@@ -68,11 +68,6 @@ export interface BackendApiProps {
   readonly knowledgeBaseRoleArn?: string;
 
   /**
-   * OpenSearch Collection ARN (for Bedrock KB vector store)
-   */
-  readonly opensearchCollectionArn?: string;
-
-  /**
    * CORS allowed origins
    */
   readonly corsAllowedOrigins?: string[];
@@ -287,7 +282,6 @@ export class BackendApi extends Construct {
         KNOWLEDGE_BASE_TABLE_NAME: props.knowledgeBaseTableName || '',
         KNOWLEDGE_BASE_STORAGE_BUCKET_NAME: props.knowledgeBaseStorageBucketName || '',
         KNOWLEDGE_BASE_ROLE_ARN: props.knowledgeBaseRoleArn || '',
-        OPENSEARCH_COLLECTION_ARN: props.opensearchCollectionArn || '',
 
         // Lambda Web Adapter configuration (already set in Dockerfile, but added for safety)
         AWS_LWA_PORT: '8080',

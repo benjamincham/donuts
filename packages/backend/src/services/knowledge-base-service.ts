@@ -4,6 +4,7 @@
  */
 
 import {
+  BedrockAgentClient,
   CreateKnowledgeBaseCommand,
   DeleteKnowledgeBaseCommand,
   CreateDataSourceCommand,
@@ -84,27 +85,26 @@ function fromDynamoKnowledgeBase(dynamoKb: DynamoKnowledgeBase): KnowledgeBase {
  */
 export class KnowledgeBaseService {
   private dynamoClient: DynamoDBClient;
-  private bedrockClient: BedrockAgentRuntimeClient;
+  private bedrockClient: BedrockAgentClient;
   private tableName: string;
   private storageBucketName: string;
   private knowledgeBaseRoleArn: string;
-  private opensearchCollectionArn: string;
+  private s3VectorBucketName: string;
 
   constructor(
     tableName: string,
     storageBucketName: string,
     region?: string,
     knowledgeBaseRoleArn?: string,
-    opensearchCollectionArn?: string
+    s3VectorBucketName?: string
   ) {
     this.tableName = tableName;
     this.storageBucketName = storageBucketName;
     const awsRegion = region || process.env.AWS_REGION || 'ap-southeast-1';
     this.knowledgeBaseRoleArn = knowledgeBaseRoleArn || process.env.KNOWLEDGE_BASE_ROLE_ARN || '';
-    this.opensearchCollectionArn =
-      opensearchCollectionArn || process.env.OPENSEARCH_COLLECTION_ARN || '';
+    this.s3VectorBucketName = s3VectorBucketName || process.env.S3_VECTOR_BUCKET_NAME || '';
     this.dynamoClient = new DynamoDBClient({ region: awsRegion });
-    this.bedrockClient = new BedrockAgentRuntimeClient({ region: awsRegion });
+    this.bedrockClient = new BedrockAgentClient({ region: awsRegion });
   }
 
   /**
@@ -177,15 +177,18 @@ export class KnowledgeBaseService {
       const s3Prefix = `kb-${knowledgeBaseId}`;
       const s3BucketArn = `arn:aws:s3:::${this.storageBucketName}`;
 
-      // Validate required ARNs
+      // Validate required configuration
       if (!this.knowledgeBaseRoleArn) {
         throw new Error('KNOWLEDGE_BASE_ROLE_ARN environment variable is not set');
       }
-      if (!this.opensearchCollectionArn) {
-        throw new Error('OPENSEARCH_COLLECTION_ARN environment variable is not set');
+      if (!this.s3VectorBucketName) {
+        throw new Error('S3_VECTOR_BUCKET_NAME environment variable is not set');
       }
 
-      // Create Bedrock Knowledge Base
+      const vectorIndexName = 'bedrock-kb-index';
+      const accountId = process.env.AWS_ACCOUNT_ID || '*';
+
+      // Create Bedrock Knowledge Base with S3 Vectors storage
       const createKbCommand = new CreateKnowledgeBaseCommand({
         name: `${input.name}-${knowledgeBaseId.slice(0, 8)}`,
         description: input.description,
@@ -199,15 +202,11 @@ export class KnowledgeBaseService {
           },
         },
         storageConfiguration: {
-          type: 'OPENSEARCH_SERVERLESS',
-          opensearchServerlessConfiguration: {
-            collectionArn: this.opensearchCollectionArn,
-            vectorIndexName: 'bedrock-knowledge-base-index',
-            fieldMapping: {
-              vectorField: 'bedrock-knowledge-base-default-vector',
-              textField: 'AMAZON_BEDROCK_TEXT_CHUNK',
-              metadataField: 'AMAZON_BEDROCK_METADATA',
-            },
+          type: 'S3_VECTORS',
+          s3VectorsConfiguration: {
+            indexArn: `arn:aws:s3vectors:${region}:${accountId}:bucket/${this.s3VectorBucketName}/index/${vectorIndexName}`,
+            indexName: vectorIndexName,
+            vectorBucketArn: `arn:aws:s3:::${this.s3VectorBucketName}`,
           },
         },
       });
@@ -508,7 +507,7 @@ export function createKnowledgeBaseService(): KnowledgeBaseService {
   const storageBucketName = config.knowledgeBaseStorageBucketName;
   const region = config.agentcore.region;
   const knowledgeBaseRoleArn = config.knowledgeBaseRoleArn;
-  const opensearchCollectionArn = config.opensearchCollectionArn;
+  const s3VectorBucketName = config.s3VectorBucketName;
 
   if (!tableName) {
     throw new Error('KNOWLEDGE_BASE_TABLE_NAME environment variable is not set');
@@ -523,6 +522,6 @@ export function createKnowledgeBaseService(): KnowledgeBaseService {
     storageBucketName,
     region,
     knowledgeBaseRoleArn,
-    opensearchCollectionArn
+    s3VectorBucketName
   );
 }

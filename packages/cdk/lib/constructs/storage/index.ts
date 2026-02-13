@@ -9,5 +9,5 @@ export { TriggersTable, TriggersTableProps } from './triggers-table';
 export { UserStorage, UserStorageProps } from './user-storage';
 export { KnowledgeBaseTable, KnowledgeBaseTableProps } from './knowledge-base-table';
 export { KnowledgeBaseStorage, KnowledgeBaseStorageProps } from './knowledge-base-storage';
-export { KnowledgeBaseOpenSearch, KnowledgeBaseOpenSearchProps } from './knowledge-base-opensearch';
+// Note: OpenSearch support removed - using S3 Vectors for vector storage instead
 export { KnowledgeBaseBedrock, KnowledgeBaseBedrockProps } from './knowledge-base-bedrock';

@@ -31,6 +31,7 @@
   "author": "AgentCore Backend API",
   "license": "MIT",
   "dependencies": {
+    "@aws-sdk/client-bedrock-agent": "^3.989.0",
     "@aws-sdk/client-bedrock-agentcore": "^3.956.0",
     "@aws-sdk/client-bedrock-agentcore-control": "^3.956.0",
     "@aws-sdk/client-dynamodb": "^3.958.0",

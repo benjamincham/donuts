@@ -1,7 +1,7 @@
 {
   "name": "fullstack-agentcore",
   "version": "0.1.0",
-  "description": "CDK スタックによる Amazon Bedrock AgentCore デプロイメント",
+  "description": "Amazon Bedrock AgentCore deployment with CDK stack",
   "private": true,
   "engines": {
     "node": ">=22.12.0"

@@ -9,9 +9,7 @@ import {
   createAgentsService,
   CreateAgentInput,
   UpdateAgentInput,
-  Agent as BackendAgent,
 } from '../services/agents-service.js';
-import { DEFAULT_AGENTS } from '../data/default-agents.js';
 
 const router = Router();
 
@@ -393,85 +391,6 @@ router.put(
 );
 
 /**
- * Default Agent initialization endpoint
- * POST /agents/initialize
- * JWT authentication required
- * Create default Agents on first login
- */
-router.post('/initialize', jwtAuthMiddleware, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const auth = getCurrentAuth(req);
-    const userId = auth.userId;
-
-    if (!userId) {
-      return res.status(400).json({
-        error: 'Invalid authentication',
-        message: 'Failed to retrieve user ID',
-        requestId: auth.requestId,
-      });
-    }
-
-    console.log('🔧 Default Agent initialization started (%s):', auth.requestId, {
-      userId,
-      username: auth.username,
-    });
-
-    const agentsService = createAgentsService();
-
-    // Check if existing Agents exist
-    const existingAgents = await agentsService.listAgents(userId);
-
-    if (existingAgents.length > 0) {
-      console.log('ℹ️  Skipping initialization because existing Agents exist (%s)', auth.requestId);
-      return res.status(200).json({
-        agents: existingAgents,
-        skipped: true,
-        message: 'Initialization skipped because existing Agents exist',
-        metadata: {
-          requestId: auth.requestId,
-          timestamp: new Date().toISOString(),
-          userId,
-          count: existingAgents.length,
-        },
-      });
-    }
-
-    // Create default Agents
-    const agents = await agentsService.initializeDefaultAgents(
-      userId,
-      DEFAULT_AGENTS,
-      auth.username
-    );
-
-    console.log(
-      '✅ Default Agent initialization completed (%s): %d items',
-      auth.requestId,
-      agents.length
-    );
-
-    res.status(201).json({
-      agents: agents,
-      skipped: false,
-      metadata: {
-        requestId: auth.requestId,
-        timestamp: new Date().toISOString(),
-        userId,
-        count: agents.length,
-      },
-    });
-  } catch (error) {
-    const auth = getCurrentAuth(req);
-    console.error('💥 Default Agent initialization error (%s):', auth.requestId, error);
-
-    res.status(500).json({
-      error: 'Internal Server Error',
-      message: error instanceof Error ? error.message : 'Failed to initialize default Agents',
-      requestId: auth.requestId,
-    });
-  }
-});
-
-/**
  * Shared Agent list retrieval endpoint (with pagination support)
  * GET /shared-agents/list
  * Query parameters:
@@ -479,8 +398,6 @@ router.post('/initialize', jwtAuthMiddleware, async (req: AuthenticatedRequest, 
  *   - limit: Number of items to retrieve (default: 20)
  *   - cursor: Pagination cursor (optional)
  * JWT authentication required
- *
- * Note: Default agents are included only on the first page (no cursor)
  */
 router.get(
   '/shared-agents/list',
@@ -496,26 +413,6 @@ router.get(
         hasCursor: !!cursor,
       });
 
-      // Convert DEFAULT_AGENTS to Agent format (system user)
-      const defaultAgents: BackendAgent[] = DEFAULT_AGENTS.map((agent, index) => ({
-        userId: 'system',
-        agentId: `default-${index}`,
-        name: agent.name,
-        description: agent.description,
-        icon: agent.icon,
-        systemPrompt: agent.systemPrompt,
-        enabledTools: agent.enabledTools,
-        scenarios: agent.scenarios.map((scenario) => ({
-          ...scenario,
-          id: `default-${index}-scenario-${agent.scenarios.indexOf(scenario)}`,
-        })),
-        mcpConfig: agent.mcpConfig,
-        createdAt: new Date('2025-01-01').toISOString(),
-        updatedAt: new Date('2025-01-01').toISOString(),
-        isShared: true,
-        createdBy: 'System',
-      }));
-
       const agentsService = createAgentsService();
       const result = await agentsService.listSharedAgents(
         limit ? parseInt(limit as string, 10) : 20,
@@ -523,38 +420,20 @@ router.get(
         cursor as string | undefined
       );
 
-      // Filter and add default agents only on first page (no cursor)
-      let allAgents: BackendAgent[] = [];
-      if (!cursor) {
-        // Filter default agents by search query
-        let filteredDefaultAgents = defaultAgents;
-        if (searchQuery) {
-          const query = (searchQuery as string).toLowerCase();
-          filteredDefaultAgents = defaultAgents.filter(
-            (agent) =>
-              agent.name.toLowerCase().includes(query) ||
-              agent.description.toLowerCase().includes(query)
-          );
-        }
-        allAgents = [...filteredDefaultAgents, ...result.items];
-      } else {
-        allAgents = result.items;
-      }
-
       console.log(
         '✅ Shared Agent list retrieval completed (%s): %d items',
         auth.requestId,
-        allAgents.length
+        result.items.length
       );
 
       res.status(200).json({
-        agents: allAgents,
+        agents: result.items,
         nextCursor: result.nextCursor,
         hasMore: result.hasMore,
         metadata: {
           requestId: auth.requestId,
           timestamp: new Date().toISOString(),
-          count: allAgents.length,
+          count: result.items.length,
         },
       });
     } catch (error) {
@@ -574,7 +453,6 @@ router.get(
  * Shared Agent detail retrieval endpoint
  * GET /shared-agents/:userId/:agentId
  * JWT authentication required
- * Supports system agents (userId === 'system')
  */
 router.get(
   '/shared-agents/:userId/:agentId',
@@ -597,38 +475,8 @@ router.get(
         agentId,
       });
 
-      let agent: BackendAgent | null = null;
-
-      // Handle system agents (default agents)
-      if (userId === 'system' && agentId.startsWith('default-')) {
-        const index = parseInt(agentId.replace('default-', '').split('-')[0], 10);
-        const defaultAgent = DEFAULT_AGENTS[index];
-
-        if (defaultAgent) {
-          agent = {
-            userId: 'system',
-            agentId: `default-${index}`,
-            name: defaultAgent.name,
-            description: defaultAgent.description,
-            icon: defaultAgent.icon,
-            systemPrompt: defaultAgent.systemPrompt,
-            enabledTools: defaultAgent.enabledTools,
-            scenarios: defaultAgent.scenarios.map((scenario) => ({
-              ...scenario,
-              id: `default-${index}-scenario-${defaultAgent.scenarios.indexOf(scenario)}`,
-            })),
-            mcpConfig: defaultAgent.mcpConfig,
-            createdAt: new Date('2025-01-01').toISOString(),
-            updatedAt: new Date('2025-01-01').toISOString(),
-            isShared: true,
-            createdBy: 'System',
-          };
-        }
-      } else {
-        // Handle user-shared agents
-        const agentsService = createAgentsService();
-        agent = await agentsService.getSharedAgent(userId, agentId);
-      }
+      const agentsService = createAgentsService();
+      const agent = await agentsService.getSharedAgent(userId, agentId);
 
       if (!agent) {
         return res.status(404).json({
@@ -668,7 +516,6 @@ router.get(
  * Shared Agent clone endpoint
  * POST /shared-agents/:userId/:agentId/clone
  * JWT authentication required
- * Supports cloning both user-shared agents and system agents
  */
 router.post(
   '/shared-agents/:userId/:agentId/clone',
@@ -703,30 +550,21 @@ router.post(
       });
 
       const agentsService = createAgentsService();
+
+      // Get shared agent
+      const sharedAgent = await agentsService.getSharedAgent(sourceUserId, sourceAgentId);
       let sourceAgent: CreateAgentInput | null = null;
 
-      // Handle system agents (default agents)
-      if (sourceUserId === 'system' && sourceAgentId.startsWith('default-')) {
-        const index = parseInt(sourceAgentId.replace('default-', '').split('-')[0], 10);
-        const defaultAgent = DEFAULT_AGENTS[index];
-
-        if (defaultAgent) {
-          sourceAgent = defaultAgent;
-        }
-      } else {
-        // Handle user-shared agents
-        const sharedAgent = await agentsService.getSharedAgent(sourceUserId, sourceAgentId);
-        if (sharedAgent) {
-          sourceAgent = {
-            name: sharedAgent.name,
-            description: sharedAgent.description,
-            icon: sharedAgent.icon,
-            systemPrompt: sharedAgent.systemPrompt,
-            enabledTools: sharedAgent.enabledTools,
-            scenarios: sharedAgent.scenarios,
-            mcpConfig: sharedAgent.mcpConfig,
-          };
-        }
+      if (sharedAgent) {
+        sourceAgent = {
+          name: sharedAgent.name,
+          description: sharedAgent.description,
+          icon: sharedAgent.icon,
+          systemPrompt: sharedAgent.systemPrompt,
+          enabledTools: sharedAgent.enabledTools,
+          scenarios: sharedAgent.scenarios,
+          mcpConfig: sharedAgent.mcpConfig,
+        };
       }
 
       if (!sourceAgent) {

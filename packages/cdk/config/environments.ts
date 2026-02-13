@@ -4,15 +4,15 @@ import type { Environment, EnvironmentConfigInput } from './environment-types';
 /**
  * Base prefix for resource naming
  * All resources are named in the format: {BASE_PREFIX}{env}
- * Examples: donuts, donutsdev, donutsstg, donutsprd
+ * Examples: iros, irosdev, irosstg, irosprd
  */
-export const BASE_PREFIX = 'donuts';
+export const BASE_PREFIX = 'iros';
 
 /**
  * Environment-specific configurations
  *
  * - env: Automatically derived from object key
- * - resourcePrefix: Auto-generated as 'donuts' + env if not specified
+ * - resourcePrefix: Auto-generated as 'iros' + env if not specified
  * - Others: Default values applied if not specified
  *
  * Default values:
@@ -48,7 +48,7 @@ export const environments: Record<Environment, EnvironmentConfigInput> = {
           detailType: ['Object Created'],
           detail: {
             bucket: {
-              name: [{ prefix: 'donuts-user-storage-' }],
+              name: [{ prefix: 'iros-user-storage-' }],
             },
           },
         },

@@ -1,11 +1,11 @@
 ---
 name: testing
-description: Testing guidelines and best practices for Donuts
+description: Testing guidelines and best practices for IRos
 ---
 
 # Testing Guide
 
-This document outlines testing practices, conventions, and guidelines for the Donuts project.
+This document outlines testing practices, conventions, and guidelines for the IRos project.
 
 ## Local development
 

@@ -2,7 +2,7 @@
 
 /**
  * AgentCore Client CLI
- * メインエントリーポイント
+ * Main entry point
  */
 
 import { Command } from 'commander';
@@ -14,30 +14,30 @@ import { configCommand, tokenInfoCommand, listProfilesCommand } from './commands
 
 const program = new Command();
 
-// プログラム情報
+// Program information
 program.name('agentcore-client').description('CLI client for AgentCore Runtime').version('0.1.0');
 
-// グローバルオプション
+// Global options
 program
   .option('--endpoint <url>', 'エンドポイントURL')
-  .option('--json', 'JSON形式で出力')
+  .option('--json', 'Output in JSON format')
   .option('--machine-user', 'マシンユーザー認証を使用')
   .option('--target-user <userId>', '対象ユーザーID（マシンユーザーモード時）');
 
-// Ping コマンド
+// Ping command
 program
   .command('ping')
   .description('Agent のヘルスチェック')
-  .option('--json', 'JSON形式で出力')
+  .option('--json', 'Output in JSON format')
   .action(async (options) => {
     try {
       const globalOptions = program.opts();
       const config = loadConfig();
 
-      // オプションで設定を上書き
+      // Override config with options
       if (globalOptions.endpoint) {
         config.endpoint = globalOptions.endpoint;
-        // エンドポイントが変更されたら Runtime 判定を再実行
+        // Re-evaluate Runtime when endpoint changes
         config.isAwsRuntime =
           config.endpoint.includes('bedrock-agentcore') && config.endpoint.includes('/invocations');
       }
@@ -53,28 +53,28 @@ program
     }
   });
 
-// Invoke コマンド
+// Invoke command
 program
   .command('invoke')
-  .description('Agent にプロンプトを送信')
-  .argument('<prompt>', '送信するプロンプト')
-  .option('--json', 'JSON形式で出力')
-  .option('--session-id <id>', 'セッションID（会話の継続に使用）')
-  .option('--no-auth', '認証なしで実行')
+  .description('Send prompt to Agent')
+  .argument('<prompt>', 'Prompt to send')
+  .option('--json', 'Output in JSON format')
+  .option('--session-id <id>', 'Session ID (used for conversation continuation)')
+  .option('--no-auth', 'Execute without authentication')
   .action(async (prompt, options) => {
     try {
       const globalOptions = program.opts();
       const config = loadConfig();
 
-      // オプションで設定を上書き
+      // Override config with options
       if (globalOptions.endpoint) {
         config.endpoint = globalOptions.endpoint;
-        // エンドポイントが変更されたら Runtime 判定を再実行
+        // Re-evaluate Runtime when endpoint changes
         config.isAwsRuntime =
           config.endpoint.includes('bedrock-agentcore') && config.endpoint.includes('/invocations');
       }
 
-      // マシンユーザーモードのオプション上書き
+      // Override options for machine user mode
       if (globalOptions.machineUser) {
         config.authMode = 'machine';
       }
@@ -82,7 +82,7 @@ program
         config.machineUser.targetUserId = globalOptions.targetUser;
       }
 
-      // セッションIDの決定: CLI > 環境変数
+      // Determine session ID: CLI > Environment variable
       const sessionId = options.sessionId || process.env.SESSION_ID;
 
       await invokeCommand(prompt, config, {
@@ -97,25 +97,25 @@ program
     }
   });
 
-// Interactive コマンド
+// Interactive command
 program
   .command('interactive')
   .alias('i')
-  .description('インタラクティブモードで Agent と対話')
+  .description('Interact with Agent in interactive mode')
   .action(async () => {
     try {
       const globalOptions = program.opts();
       const config = loadConfig();
 
-      // オプションで設定を上書き
+      // Override config with options
       if (globalOptions.endpoint) {
         config.endpoint = globalOptions.endpoint;
-        // エンドポイントが変更されたら Runtime 判定を再実行
+        // Re-evaluate Runtime when endpoint changes
         config.isAwsRuntime =
           config.endpoint.includes('bedrock-agentcore') && config.endpoint.includes('/invocations');
       }
 
-      // マシンユーザーモードのオプション上書き
+      // Override options for machine user mode
       if (globalOptions.machineUser) {
         config.authMode = 'machine';
       }
@@ -132,12 +132,12 @@ program
     }
   });
 
-// Config コマンド
+// Config command
 program
   .command('config')
-  .description('設定の表示・管理')
-  .option('--validate', '設定の検証')
-  .option('--json', 'JSON形式で出力')
+  .description('Display and manage settings')
+  .option('--validate', 'Validate settings')
+  .option('--json', 'Output in JSON format')
   .action(async (options) => {
     try {
       const globalOptions = program.opts();
@@ -155,25 +155,25 @@ program
     }
   });
 
-// Token コマンド
+// Token command
 program
   .command('token')
-  .description('JWT トークン情報の表示')
-  .option('--machine', 'マシンユーザートークンを表示')
+  .description('Display JWT token information')
+  .option('--machine', 'Display machine user token')
   .action(async (options) => {
     try {
       const globalOptions = program.opts();
       const config = loadConfig();
 
-      // オプションで設定を上書き
+      // Override config with options
       if (globalOptions.endpoint) {
         config.endpoint = globalOptions.endpoint;
-        // エンドポイントが変更されたら Runtime 判定を再実行
+        // Re-evaluate Runtime when endpoint changes
         config.isAwsRuntime =
           config.endpoint.includes('bedrock-agentcore') && config.endpoint.includes('/invocations');
       }
 
-      // マシンユーザーモードのオプション上書き
+      // Override options for machine user mode
       if (options.machine || globalOptions.machineUser) {
         config.authMode = 'machine';
       }
@@ -187,11 +187,11 @@ program
     }
   });
 
-// Runtimes コマンド（旧 Profiles）
+// Runtimes command (formerly Profiles)
 program
   .command('runtimes')
-  .alias('profiles') // 後方互換性
-  .description('利用可能なランタイム一覧')
+  .alias('profiles') // Backward compatibility
+  .description('List available runtimes')
   .action(() => {
     try {
       listProfilesCommand();
@@ -203,56 +203,56 @@ program
     }
   });
 
-// デフォルトアクション（引数なしの場合）
+// Default action (when no arguments provided)
 program.action(() => {
   console.log(chalk.cyan('🤖 AgentCore Client'));
   console.log('');
-  console.log('使用方法:');
+  console.log('Usage:');
   console.log('  agentcore-client <command> [options]');
   console.log('');
-  console.log('コマンド:');
-  console.log('  ping              Agent のヘルスチェック');
-  console.log('  invoke <prompt>   Agent にプロンプトを送信');
-  console.log('  interactive       インタラクティブモード');
-  console.log('  config            設定の表示・管理');
-  console.log('  token             JWT トークン情報');
-  console.log('  runtimes          ランタイム一覧');
+  console.log('Commands:');
+  console.log('  ping              Health check for Agent');
+  console.log('  invoke <prompt>   Send prompt to Agent');
+  console.log('  interactive       Interactive mode');
+  console.log('  config            Display and manage settings');
+  console.log('  token             JWT token information');
+  console.log('  runtimes          List runtimes');
   console.log('');
-  console.log('例:');
+  console.log('Examples:');
   console.log('  agentcore-client invoke "Hello, what is 1+1?"');
   console.log('  agentcore-client ping --endpoint http://localhost:3000');
   console.log('  agentcore-client config --validate');
   console.log('');
-  console.log('環境変数での設定:');
-  console.log('  AGENTCORE_ENDPOINT       ローカルエンドポイント');
+  console.log('Environment variable settings:');
+  console.log('  AGENTCORE_ENDPOINT       Local endpoint');
   console.log('  AGENTCORE_RUNTIME_ARN    AWS Runtime ARN');
-  console.log('  AGENTCORE_REGION         AWS リージョン');
-  console.log('  AUTH_MODE                認証モード (user | machine)');
+  console.log('  AGENTCORE_REGION         AWS Region');
+  console.log('  AUTH_MODE                Authentication mode (user | machine)');
   console.log('');
-  console.log('マシンユーザー認証:');
-  console.log('  COGNITO_DOMAIN           Cognito ドメイン');
-  console.log('  MACHINE_CLIENT_ID        マシンクライアント ID');
-  console.log('  MACHINE_CLIENT_SECRET    マシンクライアントシークレット');
-  console.log('  TARGET_USER_ID           対象ユーザー ID');
-  console.log('  COGNITO_SCOPE            OAuth スコープ（オプション）');
+  console.log('Machine user authentication:');
+  console.log('  COGNITO_DOMAIN           Cognito domain');
+  console.log('  MACHINE_CLIENT_ID        Machine client ID');
+  console.log('  MACHINE_CLIENT_SECRET    Machine client secret');
+  console.log('  TARGET_USER_ID           Target user ID');
+  console.log('  COGNITO_SCOPE            OAuth scope (optional)');
   console.log('');
-  console.log('詳細なヘルプ:');
+  console.log('Detailed help:');
   console.log('  agentcore-client --help');
   console.log('  agentcore-client <command> --help');
 });
 
-// エラーハンドリング
+// Error handling
 program.configureHelp({
   sortSubcommands: true,
 });
 
 program.showHelpAfterError();
 
-// プログラム実行
+// Program execution
 try {
   program.parse(process.argv);
 
-  // 引数が何も指定されていない場合はヘルプを表示
+  // Show help when no arguments provided
   if (process.argv.length <= 2) {
     program.help();
   }

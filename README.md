@@ -1,14 +1,14 @@
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/daisuke-awaji/donuts) 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/daisuke-awaji/iros) 
 
 Language: [English](./README.md) / [Japanese](./README-ja.md)
 
-# 🍩 Donuts
+# IRos
 
 An AI agent platform built on Amazon Bedrock AgentCore. 
 
 ## Overview
 
-Donuts is a multi-agent platform that enables teams to **create and customize** AI agents and share them across your organization. Built on Amazon Bedrock AgentCore, you can easily build agents tailored to your needs.
+IRos (Intelligent Resource Orchestration System) is a multi-agent platform that enables teams to **create and customize** AI agents and share them across your organization. Built on Amazon Bedrock AgentCore, you can easily build agents tailored to your needs.
 
 Preset agents are also available for immediate use, covering various domains including software development, data analysis, and content creation.
 
@@ -54,7 +54,7 @@ This application uses a fully serverless architecture built on Amazon Bedrock Ag
 <br>
 
 <div align="center">
-  <img src="./docs/donuts-architecture.drawio.png" alt="Architecture Diagram" width="100%">
+  <img src="./docs/iros-architecture.drawio.png" alt="Architecture Diagram" width="100%">
 </div>
 
 <br>
@@ -105,7 +105,7 @@ If needed, store API keys and tokens in AWS Secrets Manager for your target envi
 aws secretsmanager create-secret \
   --name "agentcore/default/tavily-api-key" \
   --secret-string "tvly-your-api-key-here" \
-  --region ap-northeast-1
+  --region ap-southeast-1
 ```
 
 You can get your API key from [Tavily](https://tavily.com/).
@@ -116,7 +116,7 @@ You can get your API key from [Tavily](https://tavily.com/).
 aws secretsmanager create-secret \
   --name "agentcore/default/github-token" \
   --secret-string "ghp_your-token-here" \
-  --region ap-northeast-1
+  --region ap-southeast-1
 ```
 
 You can generate a token from [GitHub Settings](https://github.com/settings/tokens).
@@ -154,7 +154,7 @@ For advanced configuration options such as custom domains, environment-specific 
 - [Deployment Options](docs/deployment-options.md) - Environment configuration and customization
 - [Local Development Setup](docs/local-development-setup.md) - Explains environment setup automation
 - [JWT Authentication System](docs/jwt-authentication.md) - Explains the authentication mechanism
-- [Architecture Diagram](docs/donuts-architecture.drawio.png)
+- [Architecture Diagram](docs/iros-architecture.drawio.png)
 
 ## License
 

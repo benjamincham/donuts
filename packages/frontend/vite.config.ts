@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/*.png'],
       manifest: {
-        name: 'Donuts Chat',
-        short_name: 'Donuts',
+        name: 'IRos Chat',
+        short_name: 'IRos',
         description: 'AI Chat Application powered by AgentCore',
         start_url: '/',
         scope: '/',
@@ -70,7 +70,7 @@ export default defineConfig({
     }),
   ],
   define: {
-    global: 'globalThis', // Node.js の global を globalThis にマッピング
+    global: 'globalThis', // Map Node.js global to globalThis
   },
   server: {
     proxy: {

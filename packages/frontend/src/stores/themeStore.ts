@@ -97,7 +97,7 @@ export const useThemeStore = create<ThemeState>()(
         },
       }),
       {
-        name: 'donuts-theme',
+        name: 'iros-theme',
         partialize: (state) => ({
           theme: state.theme,
         }),

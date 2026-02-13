@@ -109,7 +109,12 @@ interface ChatActions {
   switchSession: (sessionId: string) => void;
   addMessage: (sessionId: string, message: Omit<Message, 'id' | 'timestamp'>) => string;
   updateMessage: (sessionId: string, messageId: string, updates: Partial<Message>) => void;
-  sendPrompt: (prompt: string, sessionId: string, images?: ImageAttachment[]) => Promise<void>;
+  sendPrompt: (
+    prompt: string,
+    sessionId: string,
+    images?: ImageAttachment[],
+    knowledgeBaseIds?: string[]
+  ) => Promise<void>;
   clearSession: (sessionId: string) => void;
   setLoading: (sessionId: string, loading: boolean) => void;
   setError: (sessionId: string, error: string | null) => void;
@@ -213,7 +218,12 @@ export const useChatStore = create<ChatStore>()(
         });
       },
 
-      sendPrompt: async (prompt: string, sessionId: string, images?: ImageAttachment[]) => {
+      sendPrompt: async (
+        prompt: string,
+        sessionId: string,
+        images?: ImageAttachment[],
+        knowledgeBaseIds?: string[]
+      ) => {
         const { addMessage, updateMessage, sessions } = get();
 
         // Set activeSessionId (for streaming callbacks to work correctly)
@@ -320,12 +330,14 @@ export const useChatStore = create<ChatStore>()(
                 memoryEnabled: isMemoryEnabled,
                 mcpConfig: selectedAgent.mcpConfig as Record<string, unknown> | undefined,
                 images: imageData,
+                knowledgeBaseIds,
               }
             : {
                 modelId: selectedModelId,
                 storagePath: agentWorkingDirectory,
                 memoryEnabled: isMemoryEnabled,
                 images: imageData,
+                knowledgeBaseIds,
               };
 
           // Debug log

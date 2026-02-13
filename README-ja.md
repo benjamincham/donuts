@@ -1,12 +1,12 @@
 Language: [English](./README.md) / [Japanese](./README-ja.md)
 
-# 🍩 Donuts
+# IRos
 
 Amazon Bedrock AgentCore を基盤とした AI エージェントプラットフォームです。
 
 ## 概要
 
-Donutsは、チームが AI エージェントを**自由に作成・カスタマイズ**し、組織全体で共有できるマルチエージェントプラットフォームです。Amazon Bedrock AgentCore をベースに構築されており、用途に応じたエージェントを簡単に構築できます。
+IRosは、チームが AI エージェントを**自由に作成・カスタマイズ**し、組織全体で共有できるマルチエージェントプラットフォームです。Amazon Bedrock AgentCore をベースに構築されており、用途に応じたエージェントを簡単に構築できます。
 
 すぐに使い始められるプリセットエージェントも用意されており、ソフトウェア開発、データ分析、コンテンツ作成など、様々な分野に対応しています。
 
@@ -52,7 +52,7 @@ Donutsは、チームが AI エージェントを**自由に作成・カスタ�
 <br>
 
 <div align="center">
-  <img src="./docs/donuts-architecture.drawio.png" alt="アーキテクチャ図" width="100%">
+  <img src="./docs/iros-architecture.drawio.png" alt="アーキテクチャ図" width="100%">
 </div>
 
 <br>
@@ -104,7 +104,7 @@ npm ci
 aws secretsmanager create-secret \
   --name "agentcore/default/tavily-api-key" \
   --secret-string "tvly-your-api-key-here" \
-  --region ap-northeast-1
+  --region ap-southeast-1
 ```
 
 APIキーは[Tavily](https://tavily.com/)から取得できます。
@@ -115,7 +115,7 @@ APIキーは[Tavily](https://tavily.com/)から取得できます。
 aws secretsmanager create-secret \
   --name "agentcore/default/github-token" \
   --secret-string "ghp_your-token-here" \
-  --region ap-northeast-1
+  --region ap-southeast-1
 ```
 
 トークンは[GitHub Settings](https://github.com/settings/tokens)から生成できます。
@@ -153,7 +153,7 @@ npm run deploy
 - [Deployment Options](docs/deployment-options.md) - 環境設定とカスタマイズオプション
 - [ローカル開発環境のセットアップ](docs/local-development-setup.md) - 環境セットアップの自動化について説明しています
 - [JWT認証システム](docs/jwt-authentication.md) - 認証の仕組みについて説明しています
-- [アーキテクチャ図](docs/donuts-architecture.drawio.png)
+- [アーキテクチャ図](docs/iros-architecture.drawio.png)
 
 ## ライセンス
 

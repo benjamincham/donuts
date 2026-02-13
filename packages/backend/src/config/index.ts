@@ -31,7 +31,7 @@ const envSchema = z.object({
 
   // AgentCore Memory configuration
   AGENTCORE_MEMORY_ID: z.string().optional(),
-  AWS_REGION: z.string().default('us-east-1'),
+  AWS_REGION: z.string().default('ap-southeast-1'),
 
   // AgentCore Gateway configuration
   AGENTCORE_GATEWAY_ENDPOINT: z.string().url().optional(),
@@ -44,6 +44,18 @@ const envSchema = z.object({
 
   // Sessions Table configuration
   SESSIONS_TABLE_NAME: z.string().optional(),
+
+  // Knowledge Base Table configuration
+  KNOWLEDGE_BASE_TABLE_NAME: z.string().optional(),
+
+  // Knowledge Base Storage configuration
+  KNOWLEDGE_BASE_STORAGE_BUCKET_NAME: z.string().optional(),
+
+  // Knowledge Base Role ARN (for Bedrock KB creation)
+  KNOWLEDGE_BASE_ROLE_ARN: z.string().optional(),
+
+  // OpenSearch Collection ARN (for Bedrock KB vector store)
+  OPENSEARCH_COLLECTION_ARN: z.string().optional(),
 });
 
 /**
@@ -101,6 +113,18 @@ export const config = {
 
   // Sessions Table configuration
   sessionsTableName: env.SESSIONS_TABLE_NAME,
+
+  // Knowledge Base Table configuration
+  knowledgeBaseTableName: env.KNOWLEDGE_BASE_TABLE_NAME,
+
+  // Knowledge Base Storage configuration
+  knowledgeBaseStorageBucketName: env.KNOWLEDGE_BASE_STORAGE_BUCKET_NAME,
+
+  // Knowledge Base Role ARN (for Bedrock KB creation)
+  knowledgeBaseRoleArn: env.KNOWLEDGE_BASE_ROLE_ARN,
+
+  // OpenSearch Collection ARN (for Bedrock KB vector store)
+  opensearchCollectionArn: env.OPENSEARCH_COLLECTION_ARN,
 } as const;
 
 console.log('⚙️  Backend API configuration loaded:', {

@@ -1,11 +1,11 @@
 ---
 name: project-structure
-description: Project structure and organization guidelines for Donuts
+description: Project structure and organization guidelines for IRos
 ---
 
 # Project Structure Guide
 
-This document defines the structure and organization of the Donuts monorepo.
+This document defines the structure and organization of the IRos monorepo.
 
 ## Monorepo Architecture
 

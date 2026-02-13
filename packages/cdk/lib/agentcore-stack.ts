@@ -1,7 +1,16 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { AgentCoreGateway, AgentCoreMemory, AgentCoreRuntime } from './constructs/agentcore';
-import { AgentsTable, SessionsTable, TriggersTable, UserStorage } from './constructs/storage';
+import {
+  AgentsTable,
+  SessionsTable,
+  TriggersTable,
+  UserStorage,
+  KnowledgeBaseTable,
+  KnowledgeBaseStorage,
+  KnowledgeBaseOpenSearch,
+  KnowledgeBaseBedrock,
+} from './constructs/storage';
 import { TriggerLambda, TriggerEventSources, SessionStreamHandler } from './constructs/triggers';
 import { BackendApi, AppSyncEvents } from './constructs/api';
 import { Frontend } from './constructs/frontend';
@@ -128,6 +137,26 @@ export class AgentCoreStack extends cdk.Stack {
    * Created Sessions Table
    */
   public readonly sessionsTable: SessionsTable;
+
+  /**
+   * Created Knowledge Base Table
+   */
+  public readonly knowledgeBaseTable: KnowledgeBaseTable;
+
+  /**
+   * Created Knowledge Base Storage
+   */
+  public readonly knowledgeBaseStorage: KnowledgeBaseStorage;
+
+  /**
+   * Created Knowledge Base OpenSearch Collection
+   */
+  public readonly knowledgeBaseOpenSearch: KnowledgeBaseOpenSearch;
+
+  /**
+   * Created Bedrock Knowledge Base
+   */
+  public readonly knowledgeBaseBedrock: KnowledgeBaseBedrock;
 
   constructor(scope: Construct, id: string, props: AgentCoreStackProps) {
     super(scope, id, props);
@@ -273,6 +302,36 @@ export class AgentCoreStack extends cdk.Stack {
       pointInTimeRecovery: true,
     });
 
+    // 5.9. Create Knowledge Base Table
+    this.knowledgeBaseTable = new KnowledgeBaseTable(this, 'KnowledgeBaseTable', {
+      tableNamePrefix: resourcePrefix,
+      removalPolicy: envConfig.s3RemovalPolicy,
+      pointInTimeRecovery: true,
+    });
+
+    // 5.10. Create Knowledge Base Storage (S3 bucket for KB documents)
+    this.knowledgeBaseStorage = new KnowledgeBaseStorage(this, 'KnowledgeBaseStorage', {
+      bucketNamePrefix: resourcePrefix,
+      retentionDays: 365,
+      corsAllowedOrigins: envConfig.corsAllowedOrigins,
+      removalPolicy: envConfig.s3RemovalPolicy,
+      autoDeleteObjects: envConfig.s3AutoDeleteObjects,
+    });
+
+    // 5.11. Create Knowledge Base OpenSearch Collection (vector search)
+    this.knowledgeBaseOpenSearch = new KnowledgeBaseOpenSearch(this, 'KnowledgeBaseOpenSearch', {
+      collectionNamePrefix: resourcePrefix,
+      description: 'OpenSearch Serverless collection for Bedrock Knowledge Base vector search',
+    });
+
+    // 5.12. Create Bedrock Knowledge Base
+    this.knowledgeBaseBedrock = new KnowledgeBaseBedrock(this, 'KnowledgeBaseBedrock', {
+      knowledgeBaseNamePrefix: resourcePrefix,
+      description: 'Bedrock Knowledge Base for RAG capabilities',
+      dataSourceBucketArn: this.knowledgeBaseStorage.bucketArn,
+      opensearchCollectionArn: this.knowledgeBaseOpenSearch.collectionArn,
+    });
+
     // 6. Create Backend API (Lambda Web Adapter) - Create before Runtime to pass URL
     // 6. Create Trigger Lambda (before Backend API to get ARN)
     const triggerLambda = new TriggerLambda(this, 'TriggerLambda', {
@@ -310,6 +369,10 @@ export class AgentCoreStack extends cdk.Stack {
       userStorageBucketName: this.userStorage.bucketName,
       agentsTableName: this.agentsTable.tableName,
       sessionsTableName: this.sessionsTable.tableName,
+      knowledgeBaseTableName: this.knowledgeBaseTable.tableName,
+      knowledgeBaseStorageBucketName: this.knowledgeBaseStorage.bucketName,
+      knowledgeBaseRoleArn: this.knowledgeBaseBedrock.knowledgeBaseRole.roleArn,
+      opensearchCollectionArn: this.knowledgeBaseOpenSearch.collectionArn,
       logRetention: envConfig.logRetentionDays,
     });
 
@@ -324,6 +387,44 @@ export class AgentCoreStack extends cdk.Stack {
 
     // Grant Triggers Table read/write access to Backend API
     triggersTable.grantReadWrite(this.backendApi.lambdaFunction);
+
+    // Grant Knowledge Base Table read/write access to Backend API
+    this.knowledgeBaseTable.grantReadWrite(this.backendApi.lambdaFunction);
+
+    // Grant Knowledge Base Storage access to Backend API
+    this.knowledgeBaseStorage.grantFullAccess(this.backendApi.lambdaFunction);
+
+    // Grant Bedrock Knowledge Base permissions to Backend API
+    this.backendApi.lambdaFunction.addToRolePolicy(
+      new cdk.aws_iam.PolicyStatement({
+        actions: [
+          'bedrock:CreateKnowledgeBase',
+          'bedrock:UpdateKnowledgeBase',
+          'bedrock:DeleteKnowledgeBase',
+          'bedrock:GetKnowledgeBase',
+          'bedrock:ListKnowledgeBases',
+          'bedrock:CreateDataSource',
+          'bedrock:UpdateDataSource',
+          'bedrock:DeleteDataSource',
+          'bedrock:GetDataSource',
+          'bedrock:ListDataSources',
+          'bedrock:StartIngestionJob',
+          'bedrock:GetIngestionJob',
+          'bedrock:ListIngestionJobs',
+          'bedrock:Retrieve',
+          'bedrock:RetrieveAndGenerate',
+        ],
+        resources: ['*'],
+      })
+    );
+
+    // Grant OpenSearch Serverless access to Backend API
+    this.backendApi.lambdaFunction.addToRolePolicy(
+      new cdk.aws_iam.PolicyStatement({
+        actions: ['aoss:APIAccessAll'],
+        resources: [this.knowledgeBaseOpenSearch.collectionArn],
+      })
+    );
 
     // Grant EventBridge Scheduler permissions to Backend API
     this.backendApi.lambdaFunction.addToRolePolicy(
@@ -608,6 +709,96 @@ export class AgentCoreStack extends cdk.Stack {
       exportName: `${id}-SchedulerRoleArn`,
     });
 
+    // Knowledge Base Table-related outputs
+    new cdk.CfnOutput(this, 'KnowledgeBaseTableName', {
+      value: this.knowledgeBaseTable.tableName,
+      description: 'Knowledge Base DynamoDB Table Name',
+      exportName: `${id}-KnowledgeBaseTableName`,
+    });
+
+    new cdk.CfnOutput(this, 'KnowledgeBaseTableArn', {
+      value: this.knowledgeBaseTable.tableArn,
+      description: 'Knowledge Base DynamoDB Table ARN',
+      exportName: `${id}-KnowledgeBaseTableArn`,
+    });
+
+    new cdk.CfnOutput(this, 'KnowledgeBaseTableConfiguration', {
+      value: `Knowledge Base Table: ${this.knowledgeBaseTable.tableName} - User knowledge base storage`,
+      description: 'Knowledge Base Table configuration summary',
+    });
+
+    // Knowledge Base Storage-related outputs
+    new cdk.CfnOutput(this, 'KnowledgeBaseStorageBucketName', {
+      value: this.knowledgeBaseStorage.bucketName,
+      description: 'Knowledge Base Storage S3 Bucket Name',
+      exportName: `${id}-KnowledgeBaseStorageBucketName`,
+    });
+
+    new cdk.CfnOutput(this, 'KnowledgeBaseStorageBucketArn', {
+      value: this.knowledgeBaseStorage.bucketArn,
+      description: 'Knowledge Base Storage S3 Bucket ARN',
+      exportName: `${id}-KnowledgeBaseStorageBucketArn`,
+    });
+
+    new cdk.CfnOutput(this, 'KnowledgeBaseStorageConfiguration', {
+      value: `Knowledge Base Storage: ${this.knowledgeBaseStorage.bucketName} - KB document storage`,
+      description: 'Knowledge Base Storage configuration summary',
+    });
+
+    // Knowledge Base OpenSearch-related outputs
+    new cdk.CfnOutput(this, 'KnowledgeBaseOpenSearchCollectionName', {
+      value: this.knowledgeBaseOpenSearch.collectionName,
+      description: 'Knowledge Base OpenSearch Collection Name',
+      exportName: `${id}-KnowledgeBaseOpenSearchCollectionName`,
+    });
+
+    new cdk.CfnOutput(this, 'KnowledgeBaseOpenSearchCollectionArn', {
+      value: this.knowledgeBaseOpenSearch.collectionArn,
+      description: 'Knowledge Base OpenSearch Collection ARN',
+      exportName: `${id}-KnowledgeBaseOpenSearchCollectionArn`,
+    });
+
+    new cdk.CfnOutput(this, 'KnowledgeBaseOpenSearchCollectionEndpoint', {
+      value: this.knowledgeBaseOpenSearch.collectionEndpoint,
+      description: 'Knowledge Base OpenSearch Collection Endpoint',
+      exportName: `${id}-KnowledgeBaseOpenSearchCollectionEndpoint`,
+    });
+
+    new cdk.CfnOutput(this, 'KnowledgeBaseOpenSearchConfiguration', {
+      value: `Knowledge Base OpenSearch: ${this.knowledgeBaseOpenSearch.collectionName} - Vector search for RAG`,
+      description: 'Knowledge Base OpenSearch configuration summary',
+    });
+
+    // Bedrock Knowledge Base-related outputs
+    new cdk.CfnOutput(this, 'KnowledgeBaseId', {
+      value: this.knowledgeBaseBedrock.knowledgeBaseId,
+      description: 'Bedrock Knowledge Base ID',
+      exportName: `${id}-KnowledgeBaseId`,
+    });
+
+    new cdk.CfnOutput(this, 'KnowledgeBaseArn', {
+      value: this.knowledgeBaseBedrock.knowledgeBaseArn,
+      description: 'Bedrock Knowledge Base ARN',
+      exportName: `${id}-KnowledgeBaseArn`,
+    });
+
+    new cdk.CfnOutput(this, 'KnowledgeBaseName', {
+      value: this.knowledgeBaseBedrock.knowledgeBaseName,
+      description: 'Bedrock Knowledge Base Name',
+      exportName: `${id}-KnowledgeBaseName`,
+    });
+
+    new cdk.CfnOutput(this, 'KnowledgeBaseDataSourceId', {
+      value: this.knowledgeBaseBedrock.dataSourceId,
+      description: 'Bedrock Knowledge Base Data Source ID',
+      exportName: `${id}-KnowledgeBaseDataSourceId`,
+    });
+
+    new cdk.CfnOutput(this, 'KnowledgeBaseConfiguration', {
+      value: `Bedrock Knowledge Base: ${this.knowledgeBaseBedrock.knowledgeBaseName} - RAG capabilities enabled`,
+      description: 'Bedrock Knowledge Base configuration summary',
+    });
+
     // Add tags
     cdk.Tags.of(this).add('Project', 'AgentCore');
     cdk.Tags.of(this).add('Component', 'Gateway');
@@ -618,5 +809,9 @@ export class AgentCoreStack extends cdk.Stack {
     cdk.Tags.of(this).add('SessionsTable', 'Enabled');
     cdk.Tags.of(this).add('TriggersTable', 'Enabled');
     cdk.Tags.of(this).add('TriggerLambda', 'Enabled');
+    cdk.Tags.of(this).add('KnowledgeBaseTable', 'Enabled');
+    cdk.Tags.of(this).add('KnowledgeBaseStorage', 'Enabled');
+    cdk.Tags.of(this).add('KnowledgeBaseOpenSearch', 'Enabled');
+    cdk.Tags.of(this).add('KnowledgeBaseBedrock', 'Enabled');
   }
 }

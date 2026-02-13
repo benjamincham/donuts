@@ -4,8 +4,11 @@ import { Send, Loader2, Paperclip } from 'lucide-react';
 import { nanoid } from 'nanoid';
 import { useChatStore } from '../stores/chatStore';
 import { useSettingsStore } from '../stores/settingsStore';
+import { useKnowledgeBaseStore } from '../stores/knowledgeBaseStore';
 import { StoragePathDisplay } from './StoragePathDisplay';
 import { StorageManagementModal } from './StorageManagementModal';
+import { KnowledgeBaseManagementModal } from './KnowledgeBaseManagementModal';
+import { KnowledgeBaseSelector } from './KnowledgeBaseSelector';
 import { ModelSelector } from './ui/ModelSelector';
 import { ImagePreview } from './ImagePreview';
 import type { ImageAttachment } from '../types/index';
@@ -25,6 +28,8 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const { t } = useTranslation();
   const { sendPrompt } = useChatStore();
   const { sendBehavior } = useSettingsStore();
+  const { selectedKnowledgeBases, selectKnowledgeBase, deselectKnowledgeBase } =
+    useKnowledgeBaseStore();
   const sessionState = useChatStore((state) =>
     sessionId ? (state.sessions[sessionId] ?? null) : null
   );
@@ -32,6 +37,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const [input, setInput] = useState('');
   const [attachedImages, setAttachedImages] = useState<ImageAttachment[]>([]);
   const [isStorageModalOpen, setIsStorageModalOpen] = useState(false);
+  const [isKBModalOpen, setIsKBModalOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -288,8 +294,8 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         targetSessionId = onCreateSession();
       }
 
-      // Send message (continue asynchronously)
-      await sendPrompt(messageToSend, targetSessionId, imagesToSend);
+      // Send message with selected knowledge bases (continue asynchronously)
+      await sendPrompt(messageToSend, targetSessionId, imagesToSend, selectedKnowledgeBases);
 
       // Release Object URLs after sending
       imagesToSend.forEach((img) => {
@@ -383,6 +389,16 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             >
               <Paperclip className="w-4 h-4" />
             </button>
+            {/* Knowledge Base selector */}
+            <KnowledgeBaseSelector
+              selectedIds={selectedKnowledgeBases}
+              onSelectionChange={(ids) => {
+                // Clear and re-select
+                selectedKnowledgeBases.forEach((id) => deselectKnowledgeBase(id));
+                ids.forEach((id) => selectKnowledgeBase(id));
+              }}
+              disabled={isLoading}
+            />
           </div>
 
           {/* Send button */}
@@ -408,6 +424,12 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       <StorageManagementModal
         isOpen={isStorageModalOpen}
         onClose={() => setIsStorageModalOpen(false)}
+      />
+
+      {/* Knowledge Base management modal */}
+      <KnowledgeBaseManagementModal
+        isOpen={isKBModalOpen}
+        onClose={() => setIsKBModalOpen(false)}
       />
     </div>
   );
